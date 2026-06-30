@@ -3,7 +3,7 @@ const checked = defineModel<boolean>()
 </script>
 
 <template>
-  <label class="flex items-center gap-2 cursor-pointer hover:brightness-120">
+  <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
     <input type="checkbox" v-model="checked" class="hidden peer" />
     <span
       class="w-4 h-4 shrink-0 bg-black/50 border border-primary rounded-sm peer-checked:[&>svg]:scale-100"

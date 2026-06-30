@@ -252,7 +252,7 @@ function handleKeydown(e: KeyboardEvent) {
   --geojson-input-bg: rgba(255, 255, 255, 0.9);
   --geojson-input-text: black;
   --geojson-input-border: rgb(180, 180, 180);
-  --geojson-input-hover-brightness: 0.95;
+  --geojson-input-hover-bg: rgba(0, 0, 0, 0.55);
   --geojson-results-bg: rgba(248, 248, 248, 0.8);
   --geojson-results-border: rgb(150, 150, 150);
   --geojson-result-text: black;
@@ -269,7 +269,7 @@ html.dark {
   --geojson-input-bg: rgba(0, 0, 0, 0.8);
   --geojson-input-text: #eee;
   --geojson-input-border: rgb(115, 115, 115);
-  --geojson-input-hover-brightness: 1.2;
+  --geojson-input-hover-bg: rgba(0, 0, 0, 0.65);
   --geojson-results-bg: rgba(0, 0, 0, 0.9);
   --geojson-results-border: rgb(115, 115, 115);
   --geojson-result-text: #eee;
@@ -291,11 +291,11 @@ input[type='text'] {
   outline: none;
   border: 1px solid var(--geojson-input-border);
   padding: 0 0.5rem;
-  transition: background-color 0.2s, border-color 0.2s, filter 0.2s;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
 input[type='text']:hover {
-  filter: brightness(var(--geojson-input-hover-brightness));
+  background-color: var(--geojson-input-hover-bg);
 }
 
 input:disabled {

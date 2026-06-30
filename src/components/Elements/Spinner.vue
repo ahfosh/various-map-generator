@@ -6,6 +6,7 @@ import BaiduIcon from '@/assets/icons/baidu.svg'
 const props = defineProps<{
   size?: string
   icon?: string
+  animate?: boolean
 }>()
 
 const { size = '1' } = props
@@ -21,11 +22,11 @@ const iconComponent = computed(() => {
 </script>
 
 <template>
-  <component :is="iconComponent" :style="{ width: size + 'rem' }" />
+  <component :is="iconComponent" :class="{ 'spinner-animate': animate }" :style="{ width: size + 'rem' }" />
 </template>
 
 <style scoped>
-svg {
+.spinner-animate {
   animation: spin 8s infinite ease-in-out;
 }
 @keyframes spin {

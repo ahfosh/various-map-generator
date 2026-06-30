@@ -149,8 +149,10 @@ export class BaiduLayer extends L.GridLayer {
         )
             .then(canvas => {
                 const ctx = tile.getContext("2d");
-                ctx?.drawImage(canvas, 0, 0);
-                tile.style.filter = this.filter;
+                if (ctx) {
+                    if (this.filter) ctx.filter = this.filter;
+                    ctx.drawImage(canvas, 0, 0);
+                }
                 done(undefined, tile);
             })
             .catch(err => {

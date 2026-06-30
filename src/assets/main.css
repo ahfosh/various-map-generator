@@ -26,7 +26,7 @@ a {
 
 input,
 select {
-  @apply bg-black/50 text-center rounded-sm outline-none hover:brightness-120;
+  @apply bg-black/50 text-center rounded-sm outline-none transition-colors duration-150 hover:bg-black/65;
 }
 
 select {
@@ -119,31 +119,6 @@ hr {
   background: rgb(255, 255, 255);
 }
 
-/* Collapsible */
-@keyframes slideDown {
-  from {
-    height: 0;
-  }
-  to {
-    height: var(--height);
-  }
-}
-@keyframes slideUp {
-  from {
-    height: var(--height);
-  }
-  to {
-    height: 0;
-  }
-}
-
-/* Collapsible */
-[data-scope='collapsible'][data-state='open'] {
-  animation: slideDown 250ms ease-in-out;
-}
-[data-scope='collapsible'][data-state='closed'] {
-  animation: slideUp 200ms ease-in-out;
-}
 .collapsible-indicator {
   @apply w-5 h-5 transform duration-150;
 }
