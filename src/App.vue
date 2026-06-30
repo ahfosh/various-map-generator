@@ -875,6 +875,7 @@ import {
   sendNotifications,
   randomPointInPoly,
   GridGenerator,
+  resetPolygonSearchState,
   hasAnyDescription,
   isAcceptableCurve,
   searchInDescription,
@@ -1137,6 +1138,7 @@ function clearPolygon(polygon: Polygon) {
   removeGlifyPointsForPolygon(polygon._leaflet_id);
 
   polygon.found.length = 0;
+  resetPolygonSearchState(polygon);
 
   // Clear cached generator and its persisted state
   const generator = gridGenerators.get(polygon._leaflet_id);
@@ -1149,6 +1151,7 @@ function clearPolygon(polygon: Polygon) {
 function clearAllLocations() {
   for (const polygon of selected.value) {
     polygon.found.length = 0;
+    resetPolygonSearchState(polygon);
 
     // Clear cached generators and their persisted states
     const generator = gridGenerators.get(polygon._leaflet_id);

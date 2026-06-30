@@ -329,6 +329,18 @@ interface PolygonState {
 
 const POLY_STATES = new WeakMap<Polygon, PolygonState>();
 
+/** Reset per-polygon search bookkeeping so a cleared polygon can be scanned again. */
+export function resetPolygonSearchState(polygon: Polygon): void {
+  polygon.checkedPanos?.clear();
+  const st = POLY_STATES.get(polygon);
+  if (st) {
+    st.iteration = 0;
+    st.currentRow = 0;
+    st.sortedPtr = 0;
+    st.oddIntersectionsSeen = 0;
+  }
+}
+
 export class GridGenerator {
   // Bounds & grid
   private bounds: { south: number; north: number; west: number; east: number };
@@ -363,6 +375,7 @@ export class GridGenerator {
   private state: PolygonState;
 
   // config
+  private readonly polygon: Polygon;
   private insertionSortThreshold: number;
   private dedupeEpsilon: number;
   private debug: boolean;
@@ -372,6 +385,7 @@ export class GridGenerator {
   private readonly BITSET_BYTES_LIMIT: number; // max bytes for bitset to allow (avoid OOM)
 
   constructor(polygon: Polygon, radiusMeters: number, opts?: GridOptions) {
+    this.polygon = polygon;
     let ll: any = polygon.getLatLngs();
 
     // Handle nested arrays - flatten to get the actual coordinate array
@@ -786,7 +800,7 @@ export class GridGenerator {
    * Since this implementation uses in-memory state (WeakMap), this resets the state.
    */
   public clearSavedState(): void {
-    this.reset();
+    this.reset(this.polygon);
   }
 }
 

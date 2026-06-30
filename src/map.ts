@@ -18,7 +18,12 @@ import markerRed from '@/assets/markers/marker-red.png'
 import { ref } from 'vue'
 import { useStorage } from '@vueuse/core'
 import { settings } from '@/settings'
-import { isValidGeoJSON, getPolygonName, readFileAsText } from '@/composables/utils.ts'
+import {
+  isValidGeoJSON,
+  getPolygonName,
+  readFileAsText,
+  resetPolygonSearchState,
+} from '@/composables/utils.ts'
 import { BaiduLayer } from './layers/baiduLayer'
 import { CHINA_BBOX, CHINA_CENTER, PETAL_MAPS_TEMPLATE } from './constants'
 
@@ -893,6 +898,7 @@ function clearPolygon(polygon: Polygon) {
   // Also clear high performance points for this polygon
   removeGlifyPointsForPolygon(polygon._leaflet_id)
   polygon.found.length = 0
+  resetPolygonSearchState(polygon)
 }
 
 function clearMarkers() {
