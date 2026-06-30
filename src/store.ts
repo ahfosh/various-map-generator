@@ -2,7 +2,7 @@ import { ref, reactive } from 'vue'
 
 const selected = ref<Polygon[]>([])
 
-const select = ref('Select a country or draw a polygon')
+const select = ref('Select a China region or draw a polygon')
 
 const state = reactive({
   started: false,

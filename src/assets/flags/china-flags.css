@@ -1,0 +1,30 @@
+.flag-icon {
+  font-size: 1rem;
+  background-size: contain;
+  background-position: 50%;
+  background-repeat: no-repeat;
+  position: relative;
+  display: inline-block;
+  width: 1.33333333em;
+  line-height: 1em;
+}
+
+.flag-icon::before {
+  content: '\00a0';
+}
+
+.flag-cn {
+  background-image: url(CN.svg);
+}
+
+.flag-tw {
+  background-image: url(TW.svg);
+}
+
+.flag-hk {
+  background-image: url(HK.svg);
+}
+
+.flag-mo {
+  background-image: url(MO.svg);
+}

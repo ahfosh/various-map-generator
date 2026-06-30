@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { getOSMID, downloadGeoJSON, downloadSubdivisions, getAddressFromOSMID, type SearchResult } from '@/composables/geojsonSearch'
+import {
+  getOSMID,
+  downloadGeoJSON,
+  downloadSubdivisions,
+  getAddressFromOSMID,
+  isChinaSearchResult,
+  type SearchResult,
+} from '@/composables/geojsonSearch'
+import { normalizeChinaCountryCode } from '@/constants'
 import Button from '@/components/Elements/Button.vue'
 import Tooltip from '@/components/Elements/Tooltip.vue'
 
@@ -24,11 +32,14 @@ function getAddressInfo(result: SearchResult): string {
   // Build a detailed address from components
   const parts: string[] = []
 
-  if (result.address) {
-    if (result.address.country_code && ['tw', 'mo', 'hk'].includes(result.address.country_code)) {
-      result.address.country_code = 'cn'
+  if (result.address?.country_code) {
+    const normalized = normalizeChinaCountryCode(result.address.country_code)
+    if (normalized) {
+      result.address.country_code = normalized
       result.address.country = 'China'
     }
+  }
+  if (result.address) {
     const { city, state, region, country, province } = result.address
     if (city) parts.push(city)
     if (state && state !== city) parts.push(state)
@@ -61,6 +72,12 @@ async function handleSearch() {
       const osmId = Number(trimmedInput)
       const addressInfo = await getAddressFromOSMID(osmId)
       const geojson = await downloadGeoJSON(osmId)
+      if (addressInfo && !isChinaSearchResult(addressInfo)) {
+        error.value = 'Only locations in China (CN) are supported.'
+        isLoading.value = false
+        isSearching.value = false
+        return
+      }
       if (geojson && geojson.geometry && geojson.geometry.type) {
         let placeName = `OSM ${osmId}`
         if (addressInfo && addressInfo.display_name) {
@@ -83,7 +100,15 @@ async function handleSearch() {
 
   const results = await getOSMID(searchInput.value)
   if (results) {
-    searchResults.value = results
+    const chinaResults = results.filter(isChinaSearchResult)
+    if (chinaResults.length === 0) {
+      error.value = 'No results found in China (CN).'
+      searchResults.value = []
+      showResults.value = false
+      isSearching.value = false
+      return
+    }
+    searchResults.value = chinaResults
     showResults.value = true
   } else {
     error.value = 'No results found'
@@ -94,6 +119,10 @@ async function handleSearch() {
 }
 
 async function handleSearchSubdivisions(result: SearchResult) {
+  if (!isChinaSearchResult(result)) {
+    error.value = 'Only China (CN) subdivisions are supported.'
+    return
+  }
   if (!result.address?.country_code) {
     error.value = 'Country code not found.'
     return
@@ -111,7 +140,7 @@ async function handleSearchSubdivisions(result: SearchResult) {
       emit('importSubdivisions', subdivisions, countryName, countryCode)
       resetSearch()
     } else {
-      error.value = 'No subdivisions found for this country. The database may not contain this country.'
+      error.value = 'No subdivisions found for China. The database may not contain this data.'
     }
   } catch (err) {
     let msg = 'Unknown error.'
@@ -122,6 +151,11 @@ async function handleSearchSubdivisions(result: SearchResult) {
 }
 
 async function handleSelect(result: SearchResult) {
+  if (!isChinaSearchResult(result)) {
+    error.value = 'Only locations in China (CN) are supported.'
+    return
+  }
+
   selectedResult.value = result
   isLoading.value = true
   error.value = ''
@@ -165,10 +199,10 @@ function handleKeydown(e: KeyboardEvent) {
   <div class="space-y-2">
     <div class="flex items-center gap-2 relative">
       <div class="flex-1 flex items-center gap-1">
-        <input v-model="searchInput" type="text" placeholder="Search place name or OSM ID..." class="flex-1 px-2 py-1"
+        <input v-model="searchInput" type="text" placeholder="Search China place or OSM ID..." class="flex-1 px-2 py-1"
           @keydown="handleKeydown" :disabled="isSearching || isLoading" />
         <Tooltip>
-          Enter a place name (e.g., "Paris") or OSM ID (e.g., "71525") to search and import as polygon
+          Search a place in China (e.g., "Beijing") or a China OSM ID to import as polygon
         </Tooltip>
       </div>
       <Button size="sm" variant="primary" :disabled="!searchInput.trim() || isSearching || isLoading"
@@ -195,7 +229,7 @@ function handleKeydown(e: KeyboardEvent) {
               {{ getAddressInfo(result) }}
             </div>
           </div>
-          <div v-if="!isLoading && !loadingSubdivisions && result.addresstype === 'country'" class="flex-shrink-0">
+          <div v-if="!isLoading && !loadingSubdivisions && result.addresstype === 'country' && isChinaSearchResult(result)" class="flex-shrink-0">
             <Button size="sm" variant="primary" :disabled="isSearching || isLoading || loadingSubdivisions" 
               @click.stop="handleSearchSubdivisions(result)">
               subdivisions

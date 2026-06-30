@@ -1,111 +1,37 @@
-import { settings } from './settings'
-
-export const ColorScheme: any = {
-    Default: ['1098ad', '99e9f2'],
-    Crimson: ['f03e3e', 'ffc9c9'],
-    Deep_Pink: ['d6336c', 'fcc2d7'],
-    Blue_Violet: ['ae3ec9', 'eebefa'],
-    Slate_Blue: ['7048e8', 'd0bfff'],
-    Royal_Blue: ['4263eb', 'bac8ff'],
-    Dodger_Blue: ['1c7ed6', 'a5d8ff'],
-    Sea_Green: ['0ca678', '96f2d7'],
-    Lime_Green: ['37b24d', 'b2f2bb'],
-    Olive_Drab: ['74b816', 'd8f5a2'],
-    Orange: ['f59f00', 'ffec99'],
-    Dark_Orange: ['f76707', 'ffd8a8'],
-    Brown: ['bd5f1b', 'f7ca9e']
-}
-const [stroke, fill] = ColorScheme[settings.coverage.colorScheme]
-
-export const GOOGLE_MAPS_TEMPLATE: any = {
-    Roadmap_Default: 'https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m2!1e0!2sm!3m7!2sen!3sus!5e1105!12m1!1e3!12m1!1e2!4e0!5m5!1e0!8m2!1e1!1e1!8i47083502!6m6!1e12!2i2!11e0!39b0!44e0!50e0',
-    Terrain_Default: 'https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m2!1e0!2sm!2m1!1e4!3m7!2sen!3scn!5e1105!12m1!1e67!12m1!1e2!4e0!5m5!1e0!8m2!1e1!1e1!8i47083502!6m6!1e12!2i2!11e0!39b0!44e0!50e0',
-    Satellite: 'https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m2!1e1!2sm!3m5!2sen!3scn!5e1105!12m1!1e2!4e0!5m5!1e0!8m2!1e1!1e1!8i47083502!6m6!1e12!2i2!11e0!39b0!44e0!50e0',
-    Labels_Default: 'https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m2%211e0%212sm%213m17%212sen%213scn%215e1105%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212ss.t%3A18%7Cs.e%3Ag.s%7Cp.w%3A3%2Cs.e%3Ag%7Cp.v%3Aoff%2Cs.t%3A1%7Cs.e%3Ag.s%7Cp.v%3Aon%2Cs.e%3Al%7Cp.v%3Aon%214i0%215m2%211e0%215f1.5',
-    Labels_Satellite: 'https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m2!1e0!2sm!3m5!2sen!3scn!5e1105!12m1!1e4!4e0!5m5!1e0!8m2!1e1!1e1!8i47083502!6m6!1e12!2i2!11e0!39b0!44e0!50e0',
-
-    StreetView: `https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m8%211e2%212ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*212b1%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%2Cs.e%3Ag.f%7Cp.c%3A%23${stroke}%7Cp.w%3A${settings.coverage.colorScheme == 'Default' ? 1 : settings.coverage.line}%2Cs.e%3Ag.s%7Cp.c%3A%23${fill}%7Cp.w%3A${settings.coverage.colorScheme == 'Default' ? 3 : settings.coverage.stroke}%215m1%215f1.35`,
-    StreetView_Blobby: `https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m8!1e2!2ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*21%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%215m1%215f1.35`,
-    StreetView_Official: `https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m8%211e2%212ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*212b1%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%2Cs.e%3Ag.f%7Cp.c%3A%23${stroke}%7Cp.w%3A${settings.coverage.colorScheme == 'Default' ? 1 : settings.coverage.line}%2Cs.e%3Ag.s%7Cp.c%3A%23${fill}%7Cp.w%3A${settings.coverage.colorScheme == 'Default' ? 3 : settings.coverage.stroke}%215m1%215f1.35`,
-    StreetView_Unofficial: `https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m8%211e2%212ssvv%214m2%211scc%212s*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*212b1%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%2Cs.e%3Ag.f%7Cp.c%3A%23${stroke}%7Cp.w%3A${settings.coverage.colorScheme == 'Default' ? 1 : settings.coverage.line}%2Cs.e%3Ag.s%7Cp.c%3A%23${fill}%7Cp.w%3A${settings.coverage.colorScheme == 'Default' ? 3 : settings.coverage.stroke}%215m1%215f1.35`,
-
-    Roadmap_Classic: 'https://mapsresources-pa.googleapis.com/v1/tiles?map_id=61449c20e7fc278b&version=15797339025669136861&pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m2!1e0!2sm!3m7!2sen!3sCN!5e1105!12m1!1e3!12m1!1e2!4e0!5m5!1e0!8m2!1e1!1e1!8i47083502!6m6!1e12!2i2!11e0!39b0!44e0!50e0',
-    Terrain_Classic: 'https://mapsresources-pa.googleapis.com/v1/tiles?map_id=61449c20e7fc278b&version=15797339025669136861&pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e4!2st!3i725!2m3!1e0!2sr!3i725483392!3m12!2sen!3sCN!5e18!12m1!1e3!2m2!1sset!2sTerrain!12m3!1e37!2m1!1ssmartmaps!4e0!5m2!1e3!5f2!23i56565656!26m2!1e2!1e3',
-    Labels_Classic: 'https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i{z}!2i{x}!3i{y}!2i9!3x1!2m2!1e0!2sm!3m7!2sen!3scn!5e1105!12m1!1e2!12m1!1e15!4e0!5m5!1e0!8m2!1e1!1e1!8i47083502!6m6!1e12!2i2!11e0!39b0!44e0!50e0',
-
-    Roadmap_Dark: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i746505736!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMyMTIxMjEscy5lOmx8cC52Om9mZixzLmU6bC5pfHAudjpvZmYscy5lOmwudC5mfHAuYzojNzU3NTc1LHMuZTpsLnQuc3xwLmM6IzIxMjEyMSxzLnQ6MXxzLmU6Z3xwLmM6Izc1NzU3NSxzLnQ6MTd8cy5lOmwudC5mfHAuYzojOWU5ZTllLHMudDoyMXxwLnY6b2ZmLHMudDoxOXxzLmU6bC50LmZ8cC5jOiNiZGJkYmQscy50OjIwfHAudjpvZmYscy50OjJ8cy5lOmwudC5mfHAuYzojNzU3NTc1LHMudDo0MHxzLmU6Z3xwLmM6IzE4MTgxOCxzLnQ6NDB8cy5lOmwudC5mfHAuYzojNjE2MTYxLHMudDo0MHxzLmU6bC50LnN8cC5jOiMxYjFiMWIscy50OjN8cy5lOmcuZnxwLmM6IzJjMmMyYyxzLnQ6M3xzLmU6bC50LmZ8cC5jOiM4YThhOGEscy50OjUwfHMuZTpnfHAuYzojMzczNzM3LHMudDo0OXxzLmU6Z3xwLmM6IzNjM2MzYyxzLnQ6Nzg1fHMuZTpnfHAuYzojNGU0ZTRlLHMudDo1MXxzLmU6bC50LmZ8cC5jOiM2MTYxNjEscy50OjR8cy5lOmwudC5mfHAuYzojNzU3NTc1LHMudDo2fHMuZTpnfHAuYzojMDAwMDAwLHMudDo2fHMuZTpsLnQuZnxwLmM6IzNkM2QzZA!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Terrain_Dark: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m2!1e0!2sm!2m2!1e5!2sshading!2m2!1e6!2scontours!3m17!2sen!3scn!5e0!12m4!1e68!2m2!1sset!2sTerrain!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMyMTIxMjEscy5lOmx8cC52Om9mZixzLmU6bC5pfHAudjpvZmYscy5lOmwudC5mfHAuYzojNzU3NTc1LHMuZTpsLnQuc3xwLmM6IzIxMjEyMSxzLnQ6MXxzLmU6Z3xwLmM6Izc1NzU3NSxzLnQ6MTd8cy5lOmwudC5mfHAuYzojOWU5ZTllLHMudDoyMXxwLnY6b2ZmLHMudDoxOXxzLmU6bC50LmZ8cC5jOiNiZGJkYmQscy50OjIwfHAudjpvZmYscy50OjJ8cy5lOmwudC5mfHAuYzojNzU3NTc1LHMudDo0MHxzLmU6Z3xwLmM6IzE4MTgxOCxzLnQ6NDB8cy5lOmwudC5mfHAuYzojNjE2MTYxLHMudDo0MHxzLmU6bC50LnN8cC5jOiMxYjFiMWIscy50OjN8cy5lOmcuZnxwLmM6IzJjMmMyYyxzLnQ6M3xzLmU6bC50LmZ8cC5jOiM4YThhOGEscy50OjUwfHMuZTpnfHAuYzojMzczNzM3LHMudDo0OXxzLmU6Z3xwLmM6IzNjM2MzYyxzLnQ6Nzg1fHMuZTpnfHAuYzojNGU0ZTRlLHMudDo1MXxzLmU6bC50LmZ8cC5jOiM2MTYxNjEscy50OjR8cy5lOmwudC5mfHAuYzojNzU3NTc1LHMudDo2fHMuZTpnfHAuYzojMDAwMDAwLHMudDo2fHMuZTpsLnQuZnxwLmM6IzNkM2QzZA!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Labels_Dark: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i4i256!2m3!1e0!2sm!3i746506144!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcC52Om9mZixzLmU6Z3xwLmM6IzIxMjEyMSxzLmU6bHxwLnY6b24scy5lOmwuaXxwLnY6b24scy5lOmwudC5mfHAuYzojNzU3NTc1LHMuZTpsLnQuc3xwLmM6IzIxMjEyMSxzLnQ6MXxzLmU6Z3xwLmM6Izc1NzU3NSxzLnQ6MTd8cy5lOmwudC5mfHAuYzojOWU5ZTllLHMudDoyMXxwLnY6b2ZmLHMudDoxOXxzLmU6bC50LmZ8cC5jOiNiZGJkYmQscy50OjIwfHAudjpvZmYscy50OjJ8cy5lOmwudC5mfHAuYzojNzU3NTc1LHMudDo0MHxzLmU6Z3xwLmM6IzE4MTgxOCxzLnQ6NDB8cy5lOmwudC5mfHAuYzojNjE2MTYxLHMudDo0MHxzLmU6bC50LnN8cC5jOiMxYjFiMWIscy50OjN8cy5lOmcuZnxwLmM6IzJjMmMyYyxzLnQ6M3xzLmU6bC50LmZ8cC5jOiM4YThhOGEscy50OjUwfHMuZTpnfHAuYzojMzczNzM3LHMudDo0OXxzLmU6Z3xwLmM6IzNjM2MzYyxzLnQ6Nzg1fHMuZTpnfHAuYzojNGU0ZTRlLHMudDo1MXxzLmU6bC50LmZ8cC5jOiM2MTYxNjEscy50OjR8cy5lOmwudC5mfHAuYzojNzU3NTc1LHMudDo2fHMuZTpnfHAuYzojMDAwMDAwLHMudDo2fHMuZTpsLnQuZnxwLmM6IzNkM2QzZA!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-
-    Roadmap_Night: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i746505736!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMyNDJmM2Uscy5lOmx8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM3NDY4NTUscy5lOmwudC5zfHAuYzojMjQyZjNlLHMudDoyMXxwLnY6b2ZmLHMudDoxOXxzLmU6bC50LmZ8cC5jOiNkNTk1NjMscy50OjIwfHAudjpvZmYscy50OjJ8cy5lOmwudC5mfHAuYzojZDU5NTYzLHMudDo0MHxzLmU6Z3xwLmM6IzI2M2MzZixzLnQ6NDB8cy5lOmwudC5mfHAuYzojNmI5YTc2LHMudDozfHMuZTpnfHAuYzojMzg0MTRlLHMudDozfHMuZTpnLnN8cC5jOiMyMTJhMzcscy50OjN8cy5lOmwudC5mfHAuYzojOWNhNWIzLHMudDo0OXxzLmU6Z3xwLmM6Izc0Njg1NSxzLnQ6NDl8cy5lOmcuc3xwLmM6IzFmMjgzNSxzLnQ6NDl8cy5lOmwudC5mfHAuYzojZjNkMTljLHMudDo0fHMuZTpnfHAuYzojMmYzOTQ4LHMudDo2NnxzLmU6bC50LmZ8cC5jOiNkNTk1NjMscy50OjZ8cy5lOmd8cC5jOiMxNzI2M2Mscy50OjZ8cy5lOmwudC5mfHAuYzojNTE1YzZkLHMudDo2fHMuZTpsLnQuc3xwLmM6IzE3MjYzYw!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Terrain_Night: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m2!1e0!2sm!2m2!1e5!2sshading!2m2!1e6!2scontours!3m17!2sen!3scn!5e0!12m4!1e68!2m2!1sset!2sTerrain!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMyNDJmM2Uscy5lOmx8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM3NDY4NTUscy5lOmwudC5zfHAuYzojMjQyZjNlLHMudDoxN3xzLmU6Zy5mfHAuYzojZmZlYjNifHAudzoxLHMudDoxN3xzLmU6Zy5zfHAuYzojZDJjZmI2fHAudjpvbixzLnQ6MjF8cC52Om9mZixzLnQ6MTl8cy5lOmwudC5mfHAuYzojZDU5NTYzLHMudDoyMHxwLnY6b2ZmLHMudDoxOHxzLmU6Zy5zfHAuYzojZDVkMmJlfHAudjpvbnxwLnc6MC41LHMudDoyfHMuZTpsLnQuZnxwLmM6I2Q1OTU2MyxzLnQ6NDB8cy5lOmd8cC5jOiMyNjNjM2Yscy50OjQwfHMuZTpsLnQuZnxwLmM6IzZiOWE3NixzLnQ6M3xzLmU6Z3xwLmM6IzM4NDE0ZSxzLnQ6M3xzLmU6Zy5zfHAuYzojMjEyYTM3LHMudDozfHMuZTpsLnQuZnxwLmM6IzljYTViMyxzLnQ6NDl8cy5lOmd8cC5jOiM3NDY4NTUscy50OjQ5fHMuZTpnLnN8cC5jOiMxZjI4MzUscy50OjQ5fHMuZTpsLnQuZnxwLmM6I2YzZDE5YyxzLnQ6NHxzLmU6Z3xwLmM6IzJmMzk0OCxzLnQ6NjZ8cy5lOmwudC5mfHAuYzojZDU5NTYzLHMudDo2fHMuZTpnfHAuYzojMTcyNjNjLHMudDo2fHMuZTpsLnQuZnxwLmM6IzUxNWM2ZCxzLnQ6NnxzLmU6bC50LnN8cC5jOiMxNzI2M2M!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Labels_Night: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i746505736!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcC52Om9mZixzLmU6Z3xwLmM6IzI0MmYzZSxzLmU6bHxwLnY6b24scy5lOmwudC5mfHAuYzojNzQ2ODU1LHMuZTpsLnQuc3xwLmM6IzI0MmYzZSxzLnQ6MTd8cy5lOmcuZnxwLmM6I2ZmZWIzYnxwLnc6MSxzLnQ6MTd8cy5lOmcuc3xwLmM6I2QyY2ZiNnxwLnY6b24scy50OjE5fHMuZTpsLnQuZnxwLmM6I2Q1OTU2MyxzLnQ6MTh8cy5lOmcuc3xwLmM6I2Q1ZDJiZXxwLnY6b258cC53OjAuNSxzLnQ6MnxzLmU6bC50LmZ8cC5jOiNkNTk1NjMscy50OjQwfHMuZTpnfHAuYzojMjYzYzNmLHMudDo0MHxzLmU6bC50LmZ8cC5jOiM2YjlhNzYscy50OjN8cy5lOmd8cC5jOiMzODQxNGUscy50OjN8cy5lOmcuc3xwLmM6IzIxMmEzNyxzLnQ6M3xzLmU6bC50LmZ8cC5jOiM5Y2E1YjMscy50OjQ5fHMuZTpnfHAuYzojNzQ2ODU1LHMudDo0OXxzLmU6Zy5zfHAuYzojMWYyODM1LHMudDo0OXxzLmU6bC50LmZ8cC5jOiNmM2QxOWMscy50OjR8cy5lOmd8cC5jOiMyZjM5NDgscy50OjY2fHMuZTpsLnQuZnxwLmM6I2Q1OTU2MyxzLnQ6NnxzLmU6Z3xwLmM6IzE3MjYzYyxzLnQ6NnxzLmU6bC50LmZ8cC5jOiM1MTVjNmQscy50OjZ8cy5lOmwudC5zfHAuYzojMTcyNjNj!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-
-    Roadmap_Aubergine: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i746506288!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMxZDJjNGQscy5lOmx8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM4ZWMzYjkscy5lOmwudC5zfHAuYzojMWEzNjQ2LHMudDoxN3xzLmU6Zy5zfHAuYzojNGI2ODc4LHMudDoyMXxwLnY6b2ZmLHMudDoyMXxzLmU6bC50LmZ8cC5jOiM2NDc3OWUscy50OjIwfHAudjpvZmYscy50OjE4fHMuZTpnLnN8cC5jOiM0YjY4Nzgscy50OjgxfHMuZTpnLnN8cC5jOiMzMzRlODcscy50OjgyfHMuZTpnfHAuYzojMDIzZTU4LHMudDoyfHMuZTpnfHAuYzojMjgzZDZhLHMudDoyfHMuZTpsLnQuZnxwLmM6IzZmOWJhNSxzLnQ6MnxzLmU6bC50LnN8cC5jOiMxZDJjNGQscy50OjQwfHMuZTpnLmZ8cC5jOiMwMjNlNTgscy50OjQwfHMuZTpsLnQuZnxwLmM6IzNDNzY4MCxzLnQ6M3xzLmU6Z3xwLmM6IzMwNGE3ZCxzLnQ6M3xzLmU6bC50LmZ8cC5jOiM5OGE1YmUscy50OjN8cy5lOmwudC5zfHAuYzojMWQyYzRkLHMudDo0OXxzLmU6Z3xwLmM6IzJjNjY3NSxzLnQ6NDl8cy5lOmcuc3xwLmM6IzI1NTc2MyxzLnQ6NDl8cy5lOmwudC5mfHAuYzojYjBkNWNlLHMudDo0OXxzLmU6bC50LnN8cC5jOiMwMjNlNTgscy50OjR8cy5lOmwudC5mfHAuYzojOThhNWJlLHMudDo0fHMuZTpsLnQuc3xwLmM6IzFkMmM0ZCxzLnQ6NjV8cy5lOmcuZnxwLmM6IzI4M2Q2YSxzLnQ6NjZ8cy5lOmd8cC5jOiMzYTQ3NjIscy50OjZ8cy5lOmd8cC5jOiMwZTE2MjYscy50OjZ8cy5lOmwudC5mfHAuYzojNGU2ZDcw!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Terrain_Aubergine: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m2!1e0!2sm!2m2!1e5!2sshading!2m2!1e6!2scontours!3m17!2sen!3scn!5e0!12m4!1e68!2m2!1sset!2sTerrain!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMxZDJjNGQscy5lOmx8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM4ZWMzYjkscy5lOmwudC5zfHAuYzojMWEzNjQ2LHMudDoxN3xzLmU6Zy5zfHAuYzojNGI2ODc4LHMudDoyMXxwLnY6b2ZmLHMudDoyMXxzLmU6bC50LmZ8cC5jOiM2NDc3OWUscy50OjIwfHAudjpvZmYscy50OjE4fHMuZTpnLnN8cC5jOiM0YjY4Nzgscy50OjgxfHMuZTpnLnN8cC5jOiMzMzRlODcscy50OjgyfHMuZTpnfHAuYzojMDIzZTU4LHMudDoyfHMuZTpnfHAuYzojMjgzZDZhLHMudDoyfHMuZTpsLnQuZnxwLmM6IzZmOWJhNSxzLnQ6MnxzLmU6bC50LnN8cC5jOiMxZDJjNGQscy50OjQwfHMuZTpnLmZ8cC5jOiMwMjNlNTgscy50OjQwfHMuZTpsLnQuZnxwLmM6IzNDNzY4MCxzLnQ6M3xzLmU6Z3xwLmM6IzMwNGE3ZCxzLnQ6M3xzLmU6bC50LmZ8cC5jOiM5OGE1YmUscy50OjN8cy5lOmwudC5zfHAuYzojMWQyYzRkLHMudDo0OXxzLmU6Z3xwLmM6IzJjNjY3NSxzLnQ6NDl8cy5lOmcuc3xwLmM6IzI1NTc2MyxzLnQ6NDl8cy5lOmwudC5mfHAuYzojYjBkNWNlLHMudDo0OXxzLmU6bC50LnN8cC5jOiMwMjNlNTgscy50OjR8cy5lOmwudC5mfHAuYzojOThhNWJlLHMudDo0fHMuZTpsLnQuc3xwLmM6IzFkMmM0ZCxzLnQ6NjV8cy5lOmcuZnxwLmM6IzI4M2Q2YSxzLnQ6NjZ8cy5lOmd8cC5jOiMzYTQ3NjIscy50OjZ8cy5lOmd8cC5jOiMwZTE2MjYscy50OjZ8cy5lOmwudC5mfHAuYzojNGU2ZDcw!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Labels_Aubergine: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i746506157!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiMxZDJjNGQscy5lOmcuZnxwLnY6b2ZmLHMuZTpnLnN8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM4ZWMzYjkscy5lOmwudC5zfHAuYzojMWEzNjQ2LHMudDoxN3xzLmU6Zy5zfHAuYzojNGI2ODc4fHAudjpvbixzLnQ6MjF8cy5lOmwudC5mfHAuYzojNjQ3NzllLHMudDoxOHxzLmU6Zy5zfHAuYzojNGI2ODc4fHAudjpvbixzLnQ6ODF8cy5lOmcuc3xwLmM6IzMzNGU4NyxzLnQ6ODJ8cy5lOmd8cC5jOiMwMjNlNTgscy50OjJ8cy5lOmd8cC5jOiMyODNkNmEscy50OjJ8cy5lOmwudC5mfHAuYzojNmY5YmE1LHMudDoyfHMuZTpsLnQuc3xwLmM6IzFkMmM0ZCxzLnQ6NDB8cy5lOmcuZnxwLmM6IzAyM2U1OCxzLnQ6NDB8cy5lOmwudC5mfHAuYzojM0M3NjgwLHMudDozfHMuZTpnfHAuYzojMzA0YTdkLHMudDozfHMuZTpsLnQuZnxwLmM6Izk4YTViZSxzLnQ6M3xzLmU6bC50LnN8cC5jOiMxZDJjNGQscy50OjQ5fHMuZTpnfHAuYzojMmM2Njc1LHMudDo0OXxzLmU6Zy5zfHAuYzojMjU1NzYzLHMudDo0OXxzLmU6bC50LmZ8cC5jOiNiMGQ1Y2Uscy50OjQ5fHMuZTpsLnQuc3xwLmM6IzAyM2U1OCxzLnQ6NHxzLmU6bC50LmZ8cC5jOiM5OGE1YmUscy50OjR8cy5lOmwudC5zfHAuYzojMWQyYzRkLHMudDo2NXxzLmU6Zy5mfHAuYzojMjgzZDZhLHMudDo2NnxzLmU6Z3xwLmM6IzNhNDc2MixzLnQ6NnxzLmU6Z3xwLmM6IzBlMTYyNixzLnQ6NnxzLmU6bC50LmZ8cC5jOiM0ZTZkNzA!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-
-    Roadmap_Retro: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4!1i6!2i54!3i26!4i256!2m3!1e0!2sm!3i746506312!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiNlYmUzY2Qscy5lOmx8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM1MjM3MzUscy5lOmwudC5zfHAuYzojZjVmMWU2LHMudDoxfHMuZTpnLnN8cC5jOiNjOWIyYTYscy50OjIxfHAudjpvZmYscy50OjIxfHMuZTpnLnN8cC5jOiNkY2QyYmUscy50OjIxfHMuZTpsLnQuZnxwLmM6I2FlOWU5MCxzLnQ6MjB8cC52Om9mZixzLnQ6MTh8cy5lOmcuc3xwLnc6MSxzLnQ6ODJ8cy5lOmd8cC5jOiNkZmQyYWUscy50OjJ8cy5lOmd8cC5jOiNkZmQyYWUscy50OjJ8cy5lOmwudC5mfHAuYzojOTM4MTdjLHMudDo0MHxzLmU6Zy5mfHAuYzojYTViMDc2LHMudDo0MHxzLmU6bC50LmZ8cC5jOiM0NDc1MzAscy50OjN8cy5lOmd8cC5jOiNmNWYxZTYscy50OjUwfHMuZTpnfHAuYzojZmRmY2Y4LHMudDo0OXxzLmU6Z3xwLmM6I2Y4Yzk2NyxzLnQ6NDl8cy5lOmcuc3xwLmM6I2U5YmM2MixzLnQ6Nzg1fHMuZTpnfHAuYzojZTk4ZDU4LHMudDo3ODV8cy5lOmcuc3xwLmM6I2RiODU1NSxzLnQ6NTF8cy5lOmwudC5mfHAuYzojODA2YjYzLHMudDo2NXxzLmU6Z3xwLmM6I2RmZDJhZSxzLnQ6NjV8cy5lOmwudC5mfHAuYzojOGY3ZDc3LHMudDo2NXxzLmU6bC50LnN8cC5jOiNlYmUzY2Qscy50OjY2fHMuZTpnfHAuYzojZGZkMmFlLHMudDo2fHMuZTpnLmZ8cC5jOiNiOWQzYzIscy50OjZ8cy5lOmwudC5mfHAuYzojOTI5OThk!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Terrain_Retro: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m2!1e0!2sm!2m2!1e5!2sshading!2m2!1e6!2scontours!3m17!2sen!3scn!5e0!12m4!1e68!2m2!1sset!2sTerrain!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcy5lOmd8cC5jOiNlYmUzY2Qscy5lOmx8cC52Om9mZixzLmU6bC50LmZ8cC5jOiM1MjM3MzUscy5lOmwudC5zfHAuYzojZjVmMWU2LHMudDoxfHMuZTpnLnN8cC5jOiNjOWIyYTYscy50OjIxfHAudjpvZmYscy50OjIxfHMuZTpnLnN8cC5jOiNkY2QyYmUscy50OjIxfHMuZTpsLnQuZnxwLmM6I2FlOWU5MCxzLnQ6MjB8cC52Om9mZixzLnQ6MTh8cy5lOmcuc3xwLnc6MSxzLnQ6ODJ8cy5lOmd8cC5jOiNkZmQyYWUscy50OjJ8cy5lOmd8cC5jOiNkZmQyYWUscy50OjJ8cy5lOmwudC5mfHAuYzojOTM4MTdjLHMudDo0MHxzLmU6Zy5mfHAuYzojYTViMDc2LHMudDo0MHxzLmU6bC50LmZ8cC5jOiM0NDc1MzAscy50OjN8cy5lOmd8cC5jOiNmNWYxZTYscy50OjUwfHMuZTpnfHAuYzojZmRmY2Y4LHMudDo0OXxzLmU6Z3xwLmM6I2Y4Yzk2NyxzLnQ6NDl8cy5lOmcuc3xwLmM6I2U5YmM2MixzLnQ6Nzg1fHMuZTpnfHAuYzojZTk4ZDU4LHMudDo3ODV8cy5lOmcuc3xwLmM6I2RiODU1NSxzLnQ6NTF8cy5lOmwudC5mfHAuYzojODA2YjYzLHMudDo2NXxzLmU6Z3xwLmM6I2RmZDJhZSxzLnQ6NjV8cy5lOmwudC5mfHAuYzojOGY3ZDc3LHMudDo2NXxzLmU6bC50LnN8cC5jOiNlYmUzY2Qscy50OjY2fHMuZTpnfHAuYzojZGZkMmFlLHMudDo2fHMuZTpnLmZ8cC5jOiNiOWQzYzIscy50OjZ8cy5lOmwudC5mfHAuYzojOTI5OThk!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-    Labels_Retro: 'https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m3!1e0!2sm!3i746505736!3m18!2sen!3scn!5e18!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2zcC52Om9mZixzLmU6Z3xwLmM6I2ViZTNjZCxzLmU6bHxwLnY6b24scy5lOmwudC5mfHAuYzojNTIzNzM1LHMuZTpsLnQuc3xwLmM6I2Y1ZjFlNixzLnQ6MXxzLmU6Zy5zfHAuYzojYzliMmE2LHMudDoyMXxzLmU6Zy5zfHAuYzojZGNkMmJlLHMudDoyMXxzLmU6bC50LmZ8cC5jOiNhZTllOTAscy50OjE4fHMuZTpnLnN8cC53OjEscy50OjgyfHMuZTpnfHAuYzojZGZkMmFlLHMudDoyfHMuZTpnfHAuYzojZGZkMmFlLHMudDoyfHMuZTpsLnQuZnxwLmM6IzkzODE3YyxzLnQ6NDB8cy5lOmcuZnxwLmM6I2E1YjA3NixzLnQ6NDB8cy5lOmwudC5mfHAuYzojNDQ3NTMwLHMudDozfHMuZTpnfHAuYzojZjVmMWU2LHMudDo1MHxzLmU6Z3xwLmM6I2ZkZmNmOCxzLnQ6NDl8cy5lOmd8cC5jOiNmOGM5Njcscy50OjQ5fHMuZTpnLnN8cC5jOiNlOWJjNjIscy50Ojc4NXxzLmU6Z3xwLmM6I2U5OGQ1OCxzLnQ6Nzg1fHMuZTpnLnN8cC5jOiNkYjg1NTUscy50OjUxfHMuZTpsLnQuZnxwLmM6IzgwNmI2MyxzLnQ6NjV8cy5lOmd8cC5jOiNkZmQyYWUscy50OjY1fHMuZTpsLnQuZnxwLmM6IzhmN2Q3NyxzLnQ6NjV8cy5lOmwudC5zfHAuYzojZWJlM2NkLHMudDo2NnxzLmU6Z3xwLmM6I2RmZDJhZSxzLnQ6NnxzLmU6Zy5mfHAuYzojYjlkM2MyLHMudDo2fHMuZTpsLnQuZnxwLmM6IzkyOTk4ZA!4e0!5m2!1e3!5f2!23i46991212!23i47054750!23i47083502',
-
-}
-
-export const TENCENT_MAPS_TEMPLATE = {
-    Dark: 'https://rt{s}.map.gtimg.com/tile?z={z}&x={x}&y={-y}&styleid=4',
-    Light: 'https://rt{s}.map.gtimg.com/realtimerender?z={z}&x={x}&y={-y}'
-}
-
-export const CARTO_MAPS_TEMPLATE = {
-    Dark: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}@2x.png',
-    Light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
-}
-
-export const OSM_TEMPLATE = {
-    Standard: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    Dark: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png'
-}
-
 export const PETAL_MAPS_TEMPLATE = {
-    Light: "https://maprastertile-drcn.dbankcdn.cn/display-service/v1/online-render/getTile/24.12.10.10/{z}/{x}/{y}/?language=en&p=46&scale=2&mapType=ROADMAP&presetStyleId=standard&pattern=JPG&key=DAEDANitav6P7Q0lWzCzKkLErbrJG4kS1u%2FCpEe5ZyxW5u0nSkb40bJ%2BYAugRN03fhf0BszLS1rCrzAogRHDZkxaMrloaHPQGO6LNg==",
-    Dark: "https://maprastertile-drcn.dbankcdn.cn/display-service/v1/online-render/getTile/25.07.19.40.300/{z}/{x}/{y}/?language=en&p=46&scale=2&mapType=ROADMAP&presetStyleId=night&pattern=JPG&key=DAEDANitav6P7Q0lWzCzKkLErbrJG4kS1u%2FCpEe5ZyxW5u0nSkb40bJ%2BYAugRN03fhf0BszLS1rCrzAogRHDZkxaMrloaHPQGO6LNg=="
+  Light:
+    'https://maprastertile-drcn.dbankcdn.cn/display-service/v1/online-render/getTile/24.12.10.10/{z}/{x}/{y}/?language=en&p=46&scale=2&mapType=ROADMAP&presetStyleId=standard&pattern=JPG&key=DAEDANitav6P7Q0lWzCzKkLErbrJG4kS1u%2FCpEe5ZyxW5u0nSkb40bJ%2BYAugRN03fhf0BszLS1rCrzAogRHDZkxaMrloaHPQGO6LNg==',
+  Dark:
+    'https://maprastertile-drcn.dbankcdn.cn/display-service/v1/online-render/getTile/25.07.19.40.300/{z}/{x}/{y}/?language=en&p=46&scale=2&mapType=ROADMAP&presetStyleId=night&pattern=JPG&key=DAEDANitav6P7Q0lWzCzKkLErbrJG4kS1u%2FCpEe5ZyxW5u0nSkb40bJ%2BYAugRN03fhf0BszLS1rCrzAogRHDZkxaMrloaHPQGO6LNg==',
 }
+
+export const CHINA_CENTER: [number, number] = [35.86, 104.19]
+
+export const CHINA_BBOX = {
+  west: 72.004,
+  east: 137.8347,
+  south: 0.8293,
+  north: 55.8271,
+} as const
+
+export const CHINA_COUNTRY_CODES = new Set(['cn', 'tw', 'hk', 'mo'])
 
 export const countryCodeMap: Record<string, string> = {
-  'ad': 'AND', 'ae': 'ARE', 'af': 'AFG', 'ag': 'ATG', 'ai': 'AIA', 'al': 'ALB', 'am': 'ARM',
-  'ao': 'AGO', 'aq': 'ATA', 'ar': 'ARG', 'as': 'ASM', 'at': 'AUT', 'au': 'AUS', 'aw': 'ABW',
-  'ax': 'ALA', 'az': 'AZE', 'ba': 'BIH', 'bb': 'BRB', 'bd': 'BGD', 'be': 'BEL', 'bf': 'BFA',
-  'bg': 'BGR', 'bh': 'BHR', 'bi': 'BDI', 'bj': 'BEN', 'bl': 'BLM', 'bm': 'BMU', 'bn': 'BRN',
-  'bo': 'BOL', 'bq': 'BES', 'br': 'BRA', 'bs': 'BHS', 'bt': 'BTN', 'bv': 'BVT', 'bw': 'BWA',
-  'by': 'BLR', 'bz': 'BLZ', 'ca': 'CAN', 'cc': 'CCK', 'cd': 'COD', 'cf': 'CAF', 'cg': 'COG',
-  'ch': 'CHE', 'ci': 'CIV', 'ck': 'COK', 'cl': 'CHL', 'cm': 'CMR', 'cn': 'CHN', 'co': 'COL',
-  'cr': 'CRI', 'cu': 'CUB', 'cv': 'CPV', 'cw': 'CUW', 'cx': 'CXR', 'cy': 'CYP', 'cz': 'CZE',
-  'de': 'DEU', 'dj': 'DJI', 'dk': 'DNK', 'dm': 'DMA', 'do': 'DOM', 'dz': 'DZA', 'ec': 'ECU',
-  'ee': 'EST', 'eg': 'EGY', 'eh': 'ESH', 'er': 'ERI', 'es': 'ESP', 'et': 'ETH', 'fi': 'FIN',
-  'fj': 'FJI', 'fk': 'FLK', 'fm': 'FSM', 'fo': 'FRO', 'fr': 'FRA', 'ga': 'GAB', 'gb': 'GBR',
-  'gd': 'GRD', 'ge': 'GEO', 'gf': 'GUF', 'gg': 'GGY', 'gh': 'GHA', 'gi': 'GIB', 'gl': 'GRL',
-  'gm': 'GMB', 'gn': 'GIN', 'gp': 'GLP', 'gq': 'GNQ', 'gr': 'GRC', 'gs': 'SGS', 'gt': 'GTM',
-  'gu': 'GUM', 'gw': 'GNB', 'gy': 'GUY', 'hk': 'HKG', 'hm': 'HMD', 'hn': 'HND', 'hr': 'HRV',
-  'ht': 'HTI', 'hu': 'HUN', 'id': 'IDN', 'ie': 'IRL', 'il': 'ISR', 'im': 'IMN', 'in': 'IND',
-  'io': 'IOT', 'iq': 'IRQ', 'ir': 'IRN', 'is': 'ISL', 'it': 'ITA', 'je': 'JEY', 'jm': 'JAM',
-  'jo': 'JOR', 'jp': 'JPN', 'ke': 'KEN', 'kg': 'KGZ', 'kh': 'KHM', 'ki': 'KIR', 'km': 'COM',
-  'kn': 'KNA', 'kp': 'PRK', 'kr': 'KOR', 'kw': 'KWT', 'ky': 'CYM', 'kz': 'KAZ', 'la': 'LAO',
-  'lb': 'LBN', 'lc': 'LCA', 'li': 'LIE', 'lk': 'LKA', 'lr': 'LBR', 'ls': 'LSO', 'lt': 'LTU',
-  'lu': 'LUX', 'lv': 'LVA', 'ly': 'LBY', 'ma': 'MAR', 'mc': 'MCO', 'md': 'MDA', 'me': 'MNE',
-  'mf': 'MAF', 'mg': 'MDG', 'mh': 'MHL', 'mk': 'MKD', 'ml': 'MLI', 'mm': 'MMR', 'mn': 'MNG',
-  'mo': 'MAC', 'mp': 'MNP', 'mq': 'MTQ', 'mr': 'MRT', 'ms': 'MSR', 'mt': 'MLT', 'mu': 'MUS',
-  'mv': 'MDV', 'mw': 'MWI', 'mx': 'MEX', 'my': 'MYS', 'mz': 'MOZ', 'na': 'NAM', 'nc': 'NCL',
-  'ne': 'NER', 'nf': 'NFK', 'ng': 'NGA', 'ni': 'NIC', 'nl': 'NLD', 'no': 'NOR', 'np': 'NPL',
-  'nr': 'NRU', 'nu': 'NIU', 'nz': 'NZL', 'om': 'OMN', 'pa': 'PAN', 'pe': 'PER', 'pf': 'PYF',
-  'pg': 'PNG', 'ph': 'PHL', 'pk': 'PAK', 'pl': 'POL', 'pm': 'SPM', 'pn': 'PCN', 'pr': 'PRI',
-  'ps': 'PSE', 'pt': 'PRT', 'pw': 'PLW', 'py': 'PRY', 'qa': 'QAT', 're': 'REU', 'ro': 'ROU',
-  'rs': 'SRB', 'ru': 'RUS', 'rw': 'RWA', 'sa': 'SAU', 'sb': 'SLB', 'sc': 'SYC', 'sd': 'SDN',
-  'se': 'SWE', 'sg': 'SGP', 'sh': 'SHN', 'si': 'SVN', 'sj': 'SJM', 'sk': 'SVK', 'sl': 'SLE',
-  'sm': 'SMR', 'sn': 'SEN', 'so': 'SOM', 'sr': 'SUR', 'ss': 'SSD', 'st': 'STP', 'sv': 'SLV',
-  'sx': 'SXM', 'sy': 'SYR', 'sz': 'SWZ', 'tc': 'TCA', 'td': 'TCD', 'tf': 'ATF', 'tg': 'TGO',
-  'th': 'THA', 'tj': 'TJK', 'tk': 'TKL', 'tl': 'TLS', 'tm': 'TKM', 'tn': 'TUN', 'to': 'TON',
-  'tr': 'TUR', 'tt': 'TTO', 'tv': 'TUV', 'tw': 'TWN', 'tz': 'TZA', 'ua': 'UKR', 'ug': 'UGA',
-  'um': 'UMI', 'us': 'USA', 'uy': 'URY', 'uz': 'UZB', 'va': 'VAT', 'vc': 'VCT', 've': 'VEN',
-  'vg': 'VGB', 'vi': 'VIR', 'vn': 'VNM', 'vu': 'VUT', 'wf': 'WLF', 'ws': 'WSM', 'ye': 'YEM',
-  'yt': 'MYT', 'za': 'ZAF', 'zm': 'ZMB', 'zw': 'ZWE'
+  cn: 'CHN',
+}
+
+export function isInChina(lng: number, lat: number): boolean {
+  return (
+    lng >= CHINA_BBOX.west &&
+    lng <= CHINA_BBOX.east &&
+    lat >= CHINA_BBOX.south &&
+    lat <= CHINA_BBOX.north
+  )
+}
+
+export function normalizeChinaCountryCode(code?: string): string | null {
+  if (!code) return null
+  const lower = code.toLowerCase()
+  if (CHINA_COUNTRY_CODES.has(lower)) return 'cn'
+  return null
 }

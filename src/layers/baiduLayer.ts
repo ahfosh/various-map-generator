@@ -1,5 +1,6 @@
 import * as L from "leaflet";
 import gcoord from "gcoord";
+import { isInChina } from "@/constants";
 
 const TILE_SIZE = 256;
 
@@ -22,10 +23,6 @@ function X$1(n: [number, number], t: number, r = 512): [number, number] {
     const p = (n[0] - c) / s;
     const A = h(2 * u(o(a)) - 0.5 * e);
     return [p, A];
-}
-
-function isInChinaBbox(lon: number, lat: number): boolean {
-    return lon >= 72.004 && lon <= 137.8347 && lat >= 0.8293 && lat <= 55.8271;
 }
 
 function googleToBaidu([lng, lat]: [number, number]): [number, number] {
@@ -136,8 +133,8 @@ export class BaiduLayer extends L.GridLayer {
         const bottomRight = X$1([bottomRightPixel.x, bottomRightPixel.y], coords.z, TILE_SIZE);
 
         if (
-            !isInChinaBbox(topLeft[0], topLeft[1]) &&
-            !isInChinaBbox(bottomRight[0], bottomRight[1])
+            !isInChina(topLeft[0], topLeft[1]) &&
+            !isInChina(bottomRight[0], bottomRight[1])
         ) {
             done(undefined, tile);
             return tile;

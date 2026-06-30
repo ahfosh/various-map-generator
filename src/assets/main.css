@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,700');
-@import url('./flags/flag-icon.min.css');
+@import url('./flags/china-flags.css');
 
 @import 'tailwindcss';
 
@@ -150,25 +150,3 @@ hr {
 .container:has([data-scope='collapsible'][data-state='open']) .collapsible-indicator {
   @apply rotate-180;
 }
-
-/* GSV Coverage Layer Color Scheme Preview — use stroke (border) + fill (background) */
-.preview {
-  box-sizing: border-box;
-  background-color: #1098ad; /* Default fill (fallback) */
-  border: 2px solid #99e9f2; /* Default stroke (fallback) */
-}
-
-/* Use item[0] as stroke (border) and item[1] as fill (background) */
-.preview[data-scheme="Default"]    { border-color: #99e9f2; background-color: #1098ad; }
-.preview[data-scheme="Crimson"]    { border-color: #ffc9c9; background-color: #f03e3e; }
-.preview[data-scheme="Deep_Pink"]  { border-color: #fcc2d7; background-color: #d6336c; }
-.preview[data-scheme="Blue_Violet"]{ border-color: #eebefa; background-color: #ae3ec9; }
-.preview[data-scheme="Slate_Blue"] { border-color: #d0bfff; background-color: #7048e8; }
-.preview[data-scheme="Royal_Blue"] { border-color: #bac8ff; background-color: #4263eb; }
-.preview[data-scheme="Dodger_Blue"]{ border-color: #a5d8ff; background-color: #1c7ed6; }
-.preview[data-scheme="Sea_Green"]  { border-color: #96f2d7; background-color: #0ca678; }
-.preview[data-scheme="Lime_Green"] { border-color: #b2f2bb; background-color: #37b24d; }
-.preview[data-scheme="Olive_Drab"] { border-color: #d8f5a2; background-color: #74b816; }
-.preview[data-scheme="Orange"]     { border-color: #ffec99; background-color: #f59f00; }
-.preview[data-scheme="Dark_Orange"]{ border-color: #ffd8a8; background-color: #f76707; }
-.preview[data-scheme="Brown"]      { border-color: #f7ca9e; background-color: #bd5f1b; }

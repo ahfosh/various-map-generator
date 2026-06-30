@@ -8,8 +8,8 @@
   max-h-[calc(100vh-50px)] flex flex-col gap-1">
     <div class="container">
       <h1 class="logo px-2 py-0.5 flex gap-0.5 items-center justify-center text-xl tracking-tighter">
-        Various MapGenerat
-        <Spinner :icon="settings.provider" /> r
+        Baidu MapGenerat
+        <Spinner icon="baidu" /> r
       </h1>
     </div>
     <div class="flex-1 min-h-0 flex flex-col gap-1">
@@ -38,38 +38,12 @@
             <Checkbox v-model="settings.notification.anyLocation">
               First location found in polygon
             </Checkbox>
-            <Checkbox v-model="settings.notification.anyNoBlueLine">
-              First <span class="h-3 w-3 bg-[#E412D2] rounded-full"></span> location found in polygon
-            </Checkbox>
             <Checkbox v-model="settings.notification.onePolygonComplete">
               One polygon completed
             </Checkbox>
             <Checkbox v-model="settings.notification.allPolygonsComplete">
               All polygons completed
             </Checkbox>
-            <Checkbox
-              v-if="settings.provider.includes('google') &&
-                (settings.notification.anyLocation || 
-                settings.notification.onePolygonComplete || 
-                settings.notification.allPolygonsComplete ||
-                settings.notification.anyNoBlueLine)"
-              v-model="settings.notification.sendToDiscord">
-              Send notifications to Discord
-            </Checkbox>
-          </div>
-          <div
-            v-if="settings.provider.includes('google') && settings.notification.enabled && settings.notification.sendToDiscord"
-            class="flex items-center justify-between ml-1 mr-1 gap-2">
-            <span>Discord Webhook :</span>
-            <div class="relative">
-              <input :type="showDiscordWebhook ? 'text' : 'password'" v-model="settings.notification.discordWebhook"
-                class="w-48 h-6 px-2 pr-6 py-1 border-1 border-gray-500 rounded text-xs"
-                placeholder="Enter your Webhook URL" data-1p-ignore>
-              <button @click="showDiscordWebhook = !showDiscordWebhook"
-                class="absolute w-5 h-5 right-0.5 px-0.5 rounded" type="button">
-                <component :is="showDiscordWebhook ? EyeClosedIcon : EyeOpenIcon" class="w-4 h-4 stroke-current" />
-              </button>
-            </div>
           </div>
           <div class="flex items-center justify-between ml-1 mr-1">
             Scheduled Task :
@@ -113,68 +87,9 @@
             </select>
           </div>
           <div class="flex items-center justify-between ml-1 mr-1">
-            Google StreetView :
-            <select v-model="settings.coverage.enabled" class="w-22 ml-2">
-              <option :value=true>Custom</option>
-              <option :value=false>Default</option>
-            </select>
-          </div>
-          <div v-if="settings.coverage.enabled" class="gap-1 ml-4">
-            <div class="flex items-center justify-between">
-              Blobby Layer :
-              <Checkbox v-model="settings.coverage.blobby" class="mr-1" @change="toggleGSVBlobbyLayer">
-                {{ settings.coverage.blobby ? 'Enabled' : 'Disabled' }}
-              </Checkbox>
-            </div>
-            <div class="flex items-center justify-between">
-              Color Scheme :
-              <div class="flex items-center gap-2">
-                <span class="h-4 min-w-8 preview" :data-scheme="settings.coverage.colorScheme"></span>
-                <select v-model="settings.coverage.colorScheme" class="w-32 ml-2 mr-1" @change="setGSVLayerStyle">
-                  <option value="Default">Default</option>
-                  <option value="Crimson">Crimson</option>
-                  <option value="Deep_Pink">Deep_Pink</option>
-                  <option value="Blue_Violet">Blue_Violet</option>
-                  <option value="Slate_Blue">Slate_Blue</option>
-                  <option value="Royal_Blue">Royal_Blue</option>
-                  <option value="Dodger_Blue">Dodger_Blue</option>
-                  <option value="Lime_Green">Lime_Green</option>
-                  <option value="Olive_Drab">Olive_Drab</option>
-                  <option value="Orange">Orange</option>
-                  <option value="Dark_Orange">Dark_Orange</option>
-                  <option value="Brown">Brown</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between">
-              Line Width :
-              <Slider v-model="settings.coverage.line" class="w-41 mr-3" :min="0.5" :max="2" :step="0.1"
-                @update:modelValue="setGSVLayerStyle" :showTooltip="'focus'" :format="val => Number(val).toFixed(1)" />
-            </div>
-            <div class="flex items-center justify-between">
-              Stroke Width :
-              <Slider v-model="settings.coverage.stroke" class="w-41 mr-3" :min="1.0" :max="5.0" :step="0.1"
-                @update:modelValue="setGSVLayerStyle" :showTooltip="'focus'" :format="val => Number(val).toFixed(1)" />
-            </div>
-            <div class="flex items-center justify-between">
-              Opacity :
-              <Slider v-model="settings.coverage.opacity" class="w-41 mr-3" @update:modelValue="setCoverageLayerOpacity"
-                :min="0" :max="1.0" :step="0.1" :showTooltip="'focus'" :format="val => Number(val).toFixed(1)" />
-            </div>
-
-          </div>
-          <div v-if="settings.provider === 'mapycz'" class="flex items-center justify-between ml-1 mr-1 gap-2">
-            <span>MapyCZ API Key :</span>
-            <div class="relative">
-              <input :type="showMapyCzApiKey ? 'text' : 'password'" v-model="settings.apiKeys.mapycz"
-                @input="updateMapyCzApiKey" class="w-48 h-6 px-2 pr-6 py-1 border-1 border-gray-500 rounded text-xs"
-                placeholder="Enter your API key">
-              <button @click="showMapyCzApiKey = !showMapyCzApiKey" class="absolute w-5 h-5 right-0.5 px-0.5 rounded"
-                type="button">
-                <component :is="showMapyCzApiKey ? EyeClosedIcon : EyeOpenIcon" class="w-4 h-4 stroke-current" />
-              </button>
-            </div>
+            Coverage Opacity :
+            <Slider v-model="settings.coverage.opacity" class="w-41 mr-3" @update:modelValue="setCoverageLayerOpacity"
+              :min="0" :max="1.0" :step="0.1" :showTooltip="'focus'" :format="val => Number(val).toFixed(1)" />
           </div>
         </Collapsible>
       </div>
@@ -212,7 +127,7 @@
       <div v-if="!state.started" class="container font-bold text-center">{{ select }}</div>
 
       <div v-if="selected.length" class="container max-h-[300px] flex-1 min-h-0 flex flex-col gap-1">
-        <h2>Countries/Territories ({{ selected.length }})</h2>
+        <h2>China Regions ({{ selected.length }})</h2>
         <div class="px-1">
           <Checkbox v-model="settings.markersOnImport" title="This may affect performance.">
             Add markers to imported locations
@@ -247,7 +162,7 @@
             <label class="polygon-name" @click="changePolygonName(polygon.feature.properties)">
               {{ getPolygonName(polygon.feature.properties) }}
             </label>
-            <Spinner v-if="state.started && polygon.isProcessing" :icon="settings.provider" />
+            <Spinner v-if="state.started && polygon.isProcessing" icon="baidu" />
 
             <div class="polygon-counter">
               {{ polygon.found.length }}
@@ -302,26 +217,6 @@
         <div class="flex-1 min-h-0 overflow-y-auto">
           <Collapsible :is-open="panels.generatorSettings" class="mt-1 p-1 pr-2">
             <div class="flex items-center justify-between">
-              Provider :
-              <select v-model="settings.provider" class="w-24" @change="toggleMap(settings.provider)">
-                <option value="google">Google</option>
-                <option value="googleZoom">Zoom</option>
-                <option value="mapillary">Mapillary</option>
-                <option value="apple">Apple</option>
-                <option value="bing">Bing</option>
-                <option value="yandex">Yandex</option>
-                <option value="tencent">Tencent</option>
-                <option value="baidu">Baidu</option>
-                <option value="naver">Naver</option>
-                <option value="kakao">Kakao</option>
-                <option value="mapycz">MapyCZ</option>
-                <option value="openmap">Openmap</option>
-                <option value="ja">Já360</option>
-                <option value="asig">ASIG</option>
-                <option value="vegbilder">Vegbilder</option>
-              </select>
-            </div>
-            <div class="flex items-center justify-between">
               PanoId :
               <select v-model="settings.panoId" class="w-24 ml-10">
                 <option value="enable">Enable</option>
@@ -357,8 +252,7 @@
               </span>
             </div>
 
-            <div v-if="!['apple', 'naver', 'yandex', 'googleZoom'].includes(settings.provider)"
-              class="flex items-center justify-between">
+            <div class="flex items-center justify-between">
               Radius :
               <span>
                 <input type="number" v-model.number="settings.radius" @change="handleRadiusInput" />
@@ -367,19 +261,10 @@
             </div>
 
             <Checkbox v-model="settings.oneCountryAtATime">
-              Only check one country/polygon at a time
+              Only check one region/polygon at a time
             </Checkbox>
 
-            <Checkbox v-model="settings.onlyCheckBlueLines"
-              title="Significatly speeds up generation in areas with sparse coverage density. May negatively affect speeds if generating locations exclusively in areas with very dense coverage. (Official coverage only)">
-              Only check in areas with blue lines
-            </Checkbox>
-
-            <Checkbox v-model="settings.disableCheckBlueLine" title="Check if location is a noblueline update.">
-              Disable noblueline check
-            </Checkbox>
-
-            <div v-if="!settings.rejectOfficial">
+            <div>
               <Checkbox v-model="settings.findRegions">Minimum distance between locations</Checkbox>
               <div v-if="settings.findRegions" class="ml-6">
                 <input type="number" v-model.number="settings.regionRadius" /> <span> km </span>
@@ -400,95 +285,26 @@
         </div>
         <div class="flex-1 min-h-0 overflow-y-auto">
           <Collapsible :is-open="panels.coverageSettings" class="p-1">
-            <Checkbox v-if="!settings.rejectOfficial" v-model="settings.rejectUnofficial">Reject unofficial</Checkbox>
-            <Checkbox v-if="!settings.rejectUnofficial" v-model="settings.findByAuthor.enabled">Find by author</Checkbox>
-            <div v-if="settings.findByAuthor.enabled && !settings.rejectUnofficial" class="space-y-0.5 ml-6 pb-1">
-              <div class="flex justify-between items-center gap-2">
-                Include/Exclude :
-                <select v-model="settings.findByAuthor.filterType">
-                  <option value="include">include</option>
-                  <option value="exclude">exclude</option>
-                </select>
-              </div>
-              <div class="flex justify-between items-center gap-2">
-                Author Name :
-                  <input type="text" v-model.trim="settings.findByAuthor.author" class="w-48 border-1 border-gray-500 " placeholder="Enter author name" />
-              </div>
-            </div>
-            <Checkbox v-model="settings.rejectOfficial">Find unofficial coverage</Checkbox>
-            <Checkbox v-if="settings.rejectOfficial" v-model="settings.findPhotospheres">Find photospheres only
+            <Checkbox v-model="settings.rejectDateless">Reject locations without date</Checkbox>
+
+            <Checkbox v-model="settings.rejectNoDescription">
+              Reject locations without description
             </Checkbox>
-            <Checkbox v-if="settings.rejectOfficial" v-model="settings.findDrones">Find drone photospheres only
+            <Checkbox v-model="settings.rejectRoadName">
+              Reject locations with road name
             </Checkbox>
 
-            <div v-if="settings.rejectUnofficial && !settings.rejectOfficial">
-              <Checkbox v-model="settings.rejectDateless">Reject locations without date</Checkbox>
+            <Checkbox v-model="settings.onlyOneInTimeframe"
+              title="Only allow locations that don't have other nearby coverage in timeframe.">
+              Only one panorama on location
+            </Checkbox>
 
-              <Checkbox v-if="!settings.rejectDescription" v-model="settings.rejectNoDescription">
-                Reject locations without description
-              </Checkbox>
-              <Checkbox v-if="!settings.rejectOfficial" v-model="settings.rejectRoadName">
-                Reject locations with road name
-              </Checkbox>
-              <Checkbox v-if="settings.provider.includes('google')" v-model="settings.rejectDescription">Find trekker
-                coverage (only Gen 3)
-              </Checkbox>
-
-              <Checkbox v-model="settings.findNightCoverage" v-if="settings.provider === 'tencent'">
-                Find night coverage
-              </Checkbox>
-
-              <Checkbox v-model="settings.onlyOneInTimeframe"
-                title="Only allow locations that don't have other nearby coverage in timeframe.">
-                Only one panorama on location
-              </Checkbox>
-
-              <Checkbox v-model="settings.checkLinks">Check linked panos</Checkbox>
-              <div v-if="settings.checkLinks" class="flex items-center justify-between ml-6">
-                Depth :
-                <div class="flex items-center gap-2">
-                  {{ settings.linksDepth }}
-                  <input type="range" v-model.number="settings.linksDepth" min="1" max="10" />
-                </div>
-              </div>
-              <Checkbox v-if="settings.provider.includes('google')" v-model="settings.ignoreBadcam">Ignore BadCam
-              </Checkbox>
-              <Checkbox v-model="settings.findByGeneration.enabled"
-                v-if="['google', 'googleZoom', 'apple', 'bing', 'naver', 'yandex', 'mapillary'].includes(settings.provider)">
-                Find by
-                generation</Checkbox>
-              <div v-if="settings.findByGeneration.enabled && settings.provider.includes('google')" class="ml-6">
-                <Checkbox v-model="settings.findByGeneration.google[1]">Gen 1</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.google[2]">Gen 2</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.google[3]">Gen 3</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.google[23]">Gen 2 & 3</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.google[4]">Gen 4</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.google.badcam">BadCam</Checkbox>
-              </div>
-              <div v-if="settings.findByGeneration.enabled && settings.provider === 'apple'" class="ml-6">
-                <Checkbox v-model="settings.findByGeneration.apple.bigcam">Big Camera</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.apple.smallcam">Small Camera</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.apple.backpack">Backpack</Checkbox>
-              </div>
-              <div v-if="settings.findByGeneration.enabled && settings.provider === 'bing'" class="ml-6">
-                <Checkbox v-model="settings.findByGeneration.bing[3]">TomTom</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.bing[4]">Bing</Checkbox>
-              </div>
-              <div v-if="settings.findByGeneration.enabled && settings.provider === 'naver'" class="ml-6">
-                <Checkbox v-model="settings.findByGeneration.naver[4]">Gen 1</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.naver[3]">Gen 2</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.naver[15]">Gen 3 (3D)</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.naver[13]">Trekker</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.naver[1]">Drone</Checkbox>
-              </div>
-              <div v-if="settings.findByGeneration.enabled && settings.provider === 'yandex'" class="ml-6">
-                <Checkbox v-model="settings.findByGeneration.yandex[1]">Gen 1</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.yandex[2]">Gen 2</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.yandex.trekker">Trekker</Checkbox>
-              </div>
-              <div v-if="settings.findByGeneration.enabled && settings.provider === 'mapillary'" class="ml-6">
-                <Checkbox v-model="settings.findByGeneration.mapillary[1]">Panorama</Checkbox>
-                <Checkbox v-model="settings.findByGeneration.mapillary[2]">Photo</Checkbox>
+            <Checkbox v-model="settings.checkLinks">Check linked panos</Checkbox>
+            <div v-if="settings.checkLinks" class="flex items-center justify-between ml-6">
+              Depth :
+              <div class="flex items-center gap-2">
+                {{ settings.linksDepth }}
+                <input type="range" v-model.number="settings.linksDepth" min="1" max="10" />
               </div>
             </div>
 
@@ -503,7 +319,7 @@
               </div>
             </div>
 
-            <div v-if="!settings.rejectOfficial">
+            <div>
               <Checkbox v-model="settings.selectMonths">Filter by months</Checkbox>
               <div v-if="settings.selectMonths" class="flex flex-col gap-0.5 ml-6">
                 <div>
@@ -547,7 +363,7 @@
               </div>
             </div>
 
-            <div v-if="!settings.provider.includes('google')" class="flex items-center">
+            <div class="flex items-center">
               <Checkbox v-model="settings.filterByMinutes.enabled">Filter by minutes</Checkbox>
               <Slider v-if="settings.filterByMinutes.enabled" v-model="settings.filterByMinutes.range" :min="0"
                 :max="1439" :step="5" :showTooltip="'focus'" :range="true" class="w-48 ml-2" :format="val => {
@@ -568,14 +384,14 @@
               title="Checks all dates/panos at a location instead of only the default one. Mostly useful for countries with prior coverage where a new date may not be the default yet. May lower generation speed slightly if generating countries with prior coverage.">
               Check all dates</Checkbox>
 
-            <Checkbox v-if="settings.rejectUnofficial && !settings.rejectOfficial" v-model="settings.randomInTimeline">
+            <Checkbox v-model="settings.randomInTimeline">
               Choose random date in time range
             </Checkbox>
           </Collapsible>
         </div>
       </div>
 
-      <div v-if="!state.started && settings.rejectUnofficial && !settings.rejectOfficial"
+      <div v-if="!state.started"
         class="container settings flex flex-col flex-1 min-h-0">
         <div class="cursor-pointer relative" @click="panels.mapMakingSettings = !panels.mapMakingSettings">
           <h2>Map making settings</h2>
@@ -692,9 +508,7 @@
               </label>
             </div>
 
-            <Checkbox
-              v-if="['google', 'googleZoom', 'bing', 'naver', 'mapillary', 'baidu', 'mapycz', 'asig'].includes(settings.provider)"
-              v-model="settings.filterByAltitude.enabled">
+            <Checkbox v-model="settings.filterByAltitude.enabled">
               Filter by altitude</Checkbox>
             <div v-if="settings.filterByAltitude.enabled" class="ml-6">
               <label class="flex items-center justify-between">
@@ -765,24 +579,11 @@
         </div>
         <div class="flex-1 min-h-0">
           <Collapsible :is-open="panels.marker" class="p-1">
-            <Checkbox v-model="settings.markers.noBlueLine" v-if="settings.provider.includes('google')"
-              v-on:change="updateMarkerLayers('noBlueLine')">
-              <span class="h-3 w-3 bg-[#E412D2] rounded-full"></span>No blue line
-            </Checkbox>
             <Checkbox v-model="settings.markers.newRoad" v-on:change="updateMarkerLayers('newRoad')">
               <span class="h-3 w-3 bg-[#CA283F] rounded-full"></span>New Road
             </Checkbox>
             <Checkbox v-model="settings.markers.gen4" @change="updateMarkerLayers('gen4')">
-              <span class="h-3 w-3 bg-[#2880CA] rounded-full"></span>
-              {{ !settings.provider.includes('google') ? 'Update' : 'Gen 4 Update' }}
-            </Checkbox>
-            <Checkbox v-model="settings.markers.gen2Or3" v-if="settings.provider.includes('google')"
-              v-on:change="updateMarkerLayers('gen2Or3')">
-              <span class="h-3 w-3 bg-[#9A28CA] rounded-full"></span>Gen 2 or 3 Update
-            </Checkbox>
-            <Checkbox v-model="settings.markers.gen1" v-if="settings.provider.includes('google')"
-              v-on:change="updateMarkerLayers('gen1')">
-              <span class="h-3 w-3 bg-[#24AC20] rounded-full"></span>Gen 1 Update
+              <span class="h-3 w-3 bg-[#2880CA] rounded-full"></span>Update
             </Checkbox>
             <Checkbox v-model="settings.markers.cluster" v-on:change="handleClusterToggle" 
               :disabled="settings.markers.glify"
@@ -822,9 +623,8 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { onMounted, watch, computed, ref, onBeforeUnmount } from 'vue'
-import { formatDate, useStorage, useColorMode } from '@vueuse/core'
+import { useStorage, useColorMode } from '@vueuse/core'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
-import { llToPX } from 'web-merc-projection'
 
 import Slider from '@vueform/slider'
 import Collapsible from '@/components/Elements/Collapsible.vue'
@@ -841,12 +641,8 @@ import FileExportIcon from '@/assets/icons/file-export.svg'
 import MarkerIcon from '@/assets/icons/marker.svg'
 import TrashBinIcon from '@/assets/icons/trash-bin.svg'
 import ChevronDownIcon from '@/assets/icons/chevron-down.svg'
-import EyeOpenIcon from '@/assets/icons/eye-open.svg'
-import EyeClosedIcon from '@/assets/icons/eye-closed.svg'
-
 import { useStore } from '@/store'
 import { settings } from '@/settings'
-import { updateMapyCzApiKey } from '@/providers'
 
 import {
   L,
@@ -855,9 +651,7 @@ import {
   selectLayer,
   deselectLayer,
   toggleLayer,
-  toggleGSVBlobbyLayer,
   toggleMapTheme,
-  setGSVLayerStyle,
   setCoverageLayerOpacity,
   importLayer,
   importGeoJSONFromSearch,
@@ -877,18 +671,13 @@ import {
   type MarkerLayersTypes,
 } from '@/map'
 
-import { blueLineDetector } from '@/composables/blueLineDetector'
-import { getTileUrl, getTileColorPresence } from '@/composables/tileColorDetector'
+import { getTileColorPresence } from '@/composables/tileColorDetector'
 import {
   sendNotifications,
   randomPointInPoly,
   GridGenerator,
-  isOfficial,
-  isPhotosphere,
-  isDrone,
   hasAnyDescription,
   isAcceptableCurve,
-  getCameraGeneration,
   searchInDescription,
   getCurrentDate,
   parseDate,
@@ -898,26 +687,18 @@ import {
   readFileAsText,
   getPolygonName,
   changePolygonName,
-  headingToMapillaryX,
-  pitchToMapillaryY,
-  wgs84_to_isn93,
-  getMonthEndTimestamp
+  getMonthEndTimestamp,
 } from '@/composables/utils.ts'
 import StreetViewProviders from '@/providers'
-import { degToRad, radToDeg } from 'web-merc-projection/util'
-import { clear } from 'console'
+import { isInChina } from '@/constants'
+import {
+  StreetViewStatus,
+  type StreetViewLocationRequest,
+  type StreetViewPanoramaData,
+} from '@/streetview-types'
 
 const { currentDate } = getCurrentDate()
 const themeMode = useColorMode()
-
-/*watch(
-  () => settings.rejectOfficial,
-  (newVal) => {
-    if (newVal) {
-      settings.rejectUnofficial = false
-    }
-  },
-)*/
 
 watch(
   () => settings.notification.enabled,
@@ -949,8 +730,6 @@ const panels = useStorage('map_generator__panels_v1', {
 const { selected, select, state } = useStore()
 const allFoundPanoIds = new Set<string>()
 const generationStartTime = ref<number>(0)
-const showMapyCzApiKey = ref<boolean>(false)
-const showDiscordWebhook = ref<boolean>(false)
 const scheduledTaskTimer = ref<number | null>(null)
 const countdownTimer = ref<number | null>(null)
 const pauseCountdownTimer = ref<number | null>(null)
@@ -1179,58 +958,7 @@ function clearAllLocations() {
 function openPanorama(location: Panorama) {
   const heading = location.heading ?? 0
   const pitch = location.pitch ?? 0
-  const zoom = location.zoom ?? 0
-  let url = ''
-
-  switch (settings.provider) {
-    case 'google':
-    case 'googleZoom':
-      url = `https://www.google.com/maps/@?api=1&map_action=pano&pano=${location.panoId}&heading=${heading}&pitch=${pitch}&fov=${180 / 2 ** zoom}`
-      break
-    case 'yandex':
-      url = `https://yandex.com/maps/?l=stv%2Csta&ll=${location.lng},${location.lat}&panorama%5Bdirection%5D=${heading},0&panorama%5Bfull%5D=true&panorama%5Bid%5D=${location.panoId}&panorama%5Bpoint%5D=${location.lng},${location.lat}`
-      break
-    case 'tencent':
-      url = `https://qq-map.netlify.app/#base=roadmap&zoom=18&center=${location.lat},${location.lng}&pano=${location.panoId}&heading=${heading}&pitch=${pitch}&svz=0`
-      break
-    case 'baidu':
-      url = `https://map.baidu.com/?newmap=1&shareurl=1&panotype=street&l=21&tn=B_NORMAL_MAP&sc=0&panoid=${location.panoId}&heading=${heading}&pitch=${pitch}&pid=${location.panoId}`
-      break
-    case 'apple':
-      url = `https://lookmap.skzk.dev/#c=18/${location.lat}/${location.lng}&p=${location.lat}/${location.lng}&a=${heading}/${pitch}`
-      break
-    case 'bing':
-      url = `https://www.bing.com/maps/?cc=cn&style=x&lvl=18&id=${location.panoId}&cp=${location.lat}%7E${location.lng}&dir=${heading || 0}&pi=${pitch || 0}&setlang=en`
-      break
-    case 'kakao':
-      url = `https://map.kakao.com/?map_type=TYPE_MAP&map_attribute=ROADVIEW&panoid=${location.panoId}&pan=${heading}&tilt=${pitch}`
-      break
-    case 'naver':
-      url = `https://map.naver.com/p?c=10.00,0,0,0,adh&p=${location.panoId},${heading > 180 ? (heading - 360) : heading},${pitch},80`
-      break
-    case 'mapycz':
-      url = `https://mapy.cz/app?pid=${location.panoId}&yaw=${heading}&pitch=${pitch}&x=${location.lng}&y=${location.lat}&z=15`
-      break
-    case 'mapillary':
-      url = `https://www.mapillary.com/app/?lat=${location.lat}&lng=${location.lng}&z=15&pKey=${location.panoId}&focus=photo&x=${heading}&y=${pitch}&zoom=${zoom}`
-      break
-    case 'openmap':
-      url = `https://vn-map.netlify.app/#zoom=15&center=${location.lat},${location.lng}&pano=${location.panoId}&ppos=${location.lat},${location.lng}&heading=${heading}&pitch=${pitch}`
-      break
-    case 'asig':
-      url = `https://360.asig.gov.al/AlbaniaStreetView/player2/?sv_startup_pano=${location.panoId}&sv_startup_heading=${heading}&sv_startup_tilt=&sv_startup_zoom=${zoom}&map_center=${location.lat},${location.lng}&map_zoom=15&v_lat=${location.lat}&v_lng=${location.lng}&vl_showshare=yes`
-      break
-    case 'ja':
-      const [x, y] = wgs84_to_isn93(location.lat, location.lng)
-      url = `https://ja.is/kort/?x=${(x)}&y=${(y)}&nz=15&ja360=1&jh=${heading}`
-      break
-    case 'vegbilder':
-      url = `https://vegbilder.atlas.vegvesen.no/?lat=${location.lat}&lng=${location.lng}&zoom=15&view=image&imageId=${location.panoId}&year=${location.imageDate?.slice(0, 4)}`
-      break
-    default:
-      url = `https://www.google.com/maps/@?api=1&map_action=pano&pano=${location.panoId}&heading=${heading}&pitch=${pitch}&fov=${180 / 2 ** zoom}`
-  }
-
+  const url = `https://map.baidu.com/?newmap=1&shareurl=1&panotype=street&l=21&tn=B_NORMAL_MAP&sc=0&panoid=${location.panoId}&heading=${heading}&pitch=${pitch}&pid=${location.panoId}`
   window.open(url, '_blank')
 }
 
@@ -1255,8 +983,8 @@ function handleClusterToggle() {
 
 onMounted(async () => {
   await initMap('map')
-  
-  // Register click handler for high performance mode
+  toggleMap()
+
   registerGlifyClickHandler(openPanorama)
   
   // Restore high performance mode if it was enabled
@@ -1360,15 +1088,6 @@ async function start() {
 }
 
 async function generate(polygon: Polygon) {
-  let detector
-
-  if (settings.onlyCheckBlueLines) {
-    const bounds = polygon.getBounds()
-    const boundsNW = { lat: bounds.getNorth(), lng: bounds.getWest() }
-    const boundsSE = { lat: bounds.getSouth(), lng: bounds.getEast() }
-    detector = await blueLineDetector(boundsNW, boundsSE)
-  }
-
   if (settings.strategy === 'grid') {
     const chunkSize = settings.findRegions ? 1 : 75
     const batchSize = Math.max(chunkSize * 2, 150)
@@ -1395,12 +1114,8 @@ async function generate(polygon: Polygon) {
         
         hasMoreCoords = true
         
-        const validCoords = settings.onlyCheckBlueLines
-          ? batch.filter(point => detector(point.lat, point.lng, settings.radius))
-          : batch
-        
-        // Process in chunks
-        for (const locationGroup of validCoords.chunk(chunkSize)) {
+        const chinaBatch = batch.filter((point) => isInChina(point.lng, point.lat))
+        for (const locationGroup of chinaBatch.chunk(chunkSize)) {
           if (!state.started) break
           if (polygon.found.length >= polygon.nbNeeded) break
           await Promise.allSettled(locationGroup.map((l) => getLoc(l, polygon)))
@@ -1434,7 +1149,7 @@ async function generate(polygon: Polygon) {
       const point = randomPointInPoly(polygon)
       if (
         booleanPointInPolygon([point.lng, point.lat], polygon.feature) &&
-        (!settings.onlyCheckBlueLines || detector(point.lat, point.lng, settings.radius))
+        isInChina(point.lng, point.lat)
       ) {
         randomCoords.push(point)
       }
@@ -1448,62 +1163,18 @@ async function generate(polygon: Polygon) {
   polygon.isProcessing = false
 }
 
-function getPanoramaRequest(
-  loc: LatLng,
-  rejectUnofficial: boolean,
-): google.maps.StreetViewLocationRequest {
+function getPanoramaRequest(loc: LatLng): StreetViewLocationRequest {
   return {
     location: loc,
-    sources: [
-      rejectUnofficial ? google.maps.StreetViewSource.GOOGLE : google.maps.StreetViewSource.DEFAULT,
-    ],
     radius: settings.radius,
   }
 }
 
-async function getNonBadcamRes(pano: string): Promise<StreetViewPanoramaData | null> {
-  const initialRes = await new Promise<StreetViewPanoramaData | null>((resolve) => {
-    StreetViewProviders.getPanorama('google', { pano }, (_res, _status) => {
-      if (_status === google.maps.StreetViewStatus.OK && _res) {
-        resolve(_res)
-      } else {
-        resolve(null)
-      }
-    })
-  })
-
-  if (!initialRes) return null
-
-  const gen = getCameraGeneration(initialRes, 'google')
-
-  if (gen != 'badcam') return initialRes
-
-  const candidates = (initialRes.time ?? [])
-    .filter((loc) => loc.pano !== initialRes.location.pano)
-    .reverse()
-
-  for (const loc of candidates) {
-    const fallbackRes = await new Promise<StreetViewPanoramaData | null>((resolve) => {
-      StreetViewProviders.getPanorama('google', { pano: loc.pano }, (__res, __status) => {
-        if (__status === google.maps.StreetViewStatus.OK && __res) {
-          resolve(__res)
-        } else {
-          resolve(null)
-        }
-      })
-    })
-
-    if (fallbackRes && getCameraGeneration(fallbackRes, 'google') != 'badcam') {
-      return fallbackRes
-    }
-  }
-
-  return null
-}
-
 async function getLoc(loc: LatLng, polygon: Polygon) {
-  return StreetViewProviders.getPanorama(settings.provider, getPanoramaRequest(loc, settings.rejectUnofficial), async (res, status) => {
-    if (status != google.maps.StreetViewStatus.OK || !res || !res.location) return false
+  if (!isInChina(loc.lng, loc.lat)) return false
+
+  return StreetViewProviders.getPanorama('baidu', getPanoramaRequest(loc), async (res, status) => {
+    if (status != StreetViewStatus.OK || !res || !res.location) return false
 
     if (settings.searchInDescription.enabled) {
       const descriptionMatchesSearch = searchInDescription(
@@ -1513,51 +1184,7 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
       if (!descriptionMatchesSearch) return false
     }
 
-    if (settings.rejectUnofficial && !settings.rejectOfficial) {
-      // Reject trekkers
-      if (
-        settings.rejectNoDescription &&
-        !settings.rejectDescription &&
-        !hasAnyDescription(res.location)
-      )
-        return false
-
-      // Find trekkers
-      if (settings.rejectDescription) {
-        if (settings.provider === 'apple') {
-          if (res.location.description != 'backpack') return false
-        }
-        else {
-          if (hasAnyDescription(res.location)) return false
-        }
-      }
-
-      // Exclude Yandex Unofficial
-      if (settings.provider === 'yandex' && !res.copyright?.includes('Yandex')) return false
-
-      // Ignore Google BadCam
-      if (settings.ignoreBadcam && settings.provider.includes('google')) {
-        if (res.imageDate >= '2019-01' && res.tiles?.worldSize?.height === 6656) {
-          const validRes = await getNonBadcamRes(res.location.pano);
-          if (validRes) {
-            res = validRes;
-          } else {
-            return false;
-          }
-        }
-      }
-    }
-
-    if (!settings.rejectUnofficial && settings.findByAuthor.enabled) {
-      const author = res.copyright?.split('©')[1]?.trim() || ''
-      const authorMatch = author.toLowerCase().includes(settings.findByAuthor.author.toLowerCase())
-      if (!settings.rejectOfficial && author.includes('Google')) {
-        // If not rejecting official and author is Google, always include
-      } else {
-        if (settings.findByAuthor.filterType === 'exclude' && authorMatch) return false
-        if (settings.findByAuthor.filterType === 'include' && !authorMatch) return false
-      }
-    }
+    if (settings.rejectNoDescription && !hasAnyDescription(res.location)) return false
 
     if (settings.findRegions) {
       settings.checkAllDates = false
@@ -1570,44 +1197,14 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
       }
     }
 
-    if (settings.rejectOfficial) {
-      if (isOfficial(res.location.pano, settings.provider)) return false
-      if (settings.findPhotospheres && !isPhotosphere(res)) return false
-      if (settings.findDrones && !isDrone(res)) return false
-    }
-
-    if (settings.findNightCoverage && settings.provider === 'tencent') {
-      if (!res.location.shortDescription) return false
-      return getPano(res.location.shortDescription, polygon)
-    }
-
-    if (settings.filterByMinutes.enabled && !settings.provider.includes('google')) {
-      var panoMinutes
-      switch (settings.provider) {
-        case 'baidu':
-          panoMinutes = Number(res.location.pano.slice(16, 18)) * 60 + Number(res.location.pano.slice(18, 20))
-          break
-        case 'tencent':
-          panoMinutes = Number(res.location.pano.slice(14, 16)) * 60 + Number(res.location.pano.slice(16, 18))
-          if (
-            res.location.shortDescription &&
-            res.location.pano == res.location.shortDescription) panoMinutes += 1200
-          break
-        case 'apple':
-        case 'bing':
-        case 'naver':
-        case 'yandex':
-        case 'mapycz':
-        case 'kakao':
-        case 'openmap':
-        case 'mapillary':
-        case 'vegbilder':
-        case 'asig':
-          panoMinutes = Number(res.imageDate.slice(11, 13)) * 60 + Number(res.imageDate.slice(14, 16))
-          break
-      }
-
-      if (panoMinutes < settings.filterByMinutes.range[0] || panoMinutes > settings.filterByMinutes.range[1]) return false
+    if (settings.filterByMinutes.enabled) {
+      const panoMinutes =
+        Number(res.location.pano.slice(16, 18)) * 60 + Number(res.location.pano.slice(18, 20))
+      if (
+        panoMinutes < settings.filterByMinutes.range[0] ||
+        panoMinutes > settings.filterByMinutes.range[1]
+      )
+        return false
     }
 
     if (settings.randomInTimeline && res.time) {
@@ -1623,24 +1220,16 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
       getPano(randomPano.pano, polygon)
     }
 
-    if (
-      settings.checkAllDates &&
-      !settings.selectMonths &&
-      !settings.rejectOfficial &&
-      !settings.randomInTimeline
-    ) {
+    if (settings.checkAllDates && !settings.selectMonths && !settings.randomInTimeline) {
       if (!res.time?.length) return false
       const { fromDate, toDate } = getCachedDates()
       let dateWithin = false
-      for (const loc of res.time) {
-        if (settings.rejectUnofficial && !isOfficial(loc.pano, settings.provider)) continue
-
-        const date = findDateInObject(loc)
+      for (const timelineLoc of res.time) {
+        const date = findDateInObject(timelineLoc)
         const iDate = parseDate(date)
         if (iDate >= fromDate && iDate <= toDate) {
-          // if date ranges from fromDate to toDate, set dateWithin to true and stop the loop
           dateWithin = true
-          getPano(loc.pano, polygon)
+          getPano(timelineLoc.pano, polygon)
         }
       }
       if (!dateWithin) return false
@@ -1660,89 +1249,61 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
   })
 }
 
-async function isPanoGood(pano: google.maps.StreetViewPanoramaData) {
-  if (settings.rejectUnofficial && !settings.rejectOfficial) {
-    if (!pano.location || !isOfficial(pano.location.pano, settings.provider)) return false
+async function isPanoGood(pano: StreetViewPanoramaData) {
+  if (!pano.location) return false
 
-    // Reject road names
-    if (settings.rejectRoadName && pano.location.road) return false
+  if (settings.rejectRoadName && pano.location.road) return false
+  if (settings.rejectNoDescription && !hasAnyDescription(pano.location)) return false
 
-    // Find trekkers
-    if (settings.rejectDescription && hasAnyDescription(pano.location)) return false
-
-    if (settings.filterByLinksLength.enabled) {
-      const links = pano.links ?? []
-      if (
-        links.length < settings.filterByLinksLength.range[0] ||
-        links.length > settings.filterByLinksLength.range[1]
-      )
-        return false
-    }
-
-    // Find Generation
+  if (settings.filterByLinksLength.enabled) {
+    const links = pano.links ?? []
     if (
-      settings.findByGeneration.enabled &&
-      ((!settings.rejectOfficial && !settings.checkAllDates) || settings.selectMonths)
-    ) {
-      if (['google', 'googleZoom', 'apple', 'yandex', 'bing', 'naver', 'mapillary'].includes(settings.provider)) {
-        const gen = getCameraGeneration(pano, settings.provider)
-        if (gen === 0) return false
-        if (!settings.findByGeneration[settings.provider === 'googleZoom' ? 'google' : settings.provider][gen]) return false
-      }
-    }
+      links.length < settings.filterByLinksLength.range[0] ||
+      links.length > settings.filterByLinksLength.range[1]
+    )
+      return false
+  }
 
-    if (settings.filterByAltitude.enabled) {
-      if (['google', 'googleZoom', 'baidu', 'mapillary', 'bing', 'naver', 'mapycz', 'asig'].includes(settings.provider)) {
-        if (
-          pano.location.altitude < settings.filterByAltitude.range[0] ||
-          pano.location.altitude > settings.filterByAltitude.range[1]
-        )
-          return false
-      }
-    }
+  if (settings.filterByAltitude.enabled) {
+    if (
+      pano.location.altitude != null &&
+      (pano.location.altitude < settings.filterByAltitude.range[0] ||
+        pano.location.altitude > settings.filterByAltitude.range[1])
+    )
+      return false
+  }
 
-    if (settings.getCurve) {
-      const links = pano.links ?? []
-      if (!isAcceptableCurve(links, settings.minCurveAngle)) return false
-    }
+  if (settings.getCurve) {
+    const links = pano.links ?? []
+    if (!isAcceptableCurve(links, settings.minCurveAngle)) return false
+  }
 
-    if (settings.findByTileColor.enabled) {
-      const latLng = pano.location.latLng
-      if (!latLng) return false
-      const anyMatch = await getTileColorPresence(
-        { lat: latLng.lat(), lng: latLng.lng() },
-        settings.findByTileColor,
-      )
-      if (!anyMatch) return false
-      // debug/preview tile
-      // const tileUrl = getTileUrl(
-      //   { lat: latLng.lat(), lng: latLng.lng() },
-      //   settings.findByTileColor.tileProvider,
-      //   settings.findByTileColor.zoom,
-      // )
-      // console.log('🚀 ~ tileUrl:', tileUrl)
-    }
+  if (settings.findByTileColor.enabled) {
+    const latLng = pano.location.latLng
+    if (!latLng) return false
+    const anyMatch = await getTileColorPresence(
+      { lat: latLng.lat(), lng: latLng.lng() },
+      settings.findByTileColor,
+    )
+    if (!anyMatch) return false
   }
 
   if (settings.rejectDateless && !pano.imageDate) return false
 
   const { fromDate, toDate } = getCachedDates()
-  const locDate = Date.parse(pano.imageDate)
+  const locDate = Date.parse(pano.imageDate ?? '')
   const fromMonth = settings.fromMonth
   const toMonth = settings.toMonth
   const fromYear = settings.fromYear
   const toYear = settings.toYear
 
-  if (!settings.selectMonths) {
-    if (!settings.checkAllDates || settings.rejectOfficial) {
-      if (locDate < fromDate || locDate > toDate) return false
-    }
+  if (!settings.selectMonths && !settings.checkAllDates) {
+    if (locDate < fromDate || locDate > toDate) return false
   }
 
   if (settings.onlyOneInTimeframe) {
     if (!pano.time?.length) return false
     for (const loc of pano.time) {
-      if (settings.rejectUnofficial && !isOfficial(loc.pano, settings.provider)) continue
       if (loc.pano == pano.location?.pano) continue
       const date = findDateInObject(loc)
       const iDate = parseDate(date)
@@ -1750,23 +1311,11 @@ async function isPanoGood(pano: google.maps.StreetViewPanoramaData) {
     }
   }
 
-  if (settings.checkAllDates && !settings.selectMonths && !settings.rejectOfficial) {
+  if (settings.checkAllDates && !settings.selectMonths) {
     if (!pano.time?.length) return false
-
-    if (
-      settings.findByGeneration.enabled
-    ) {
-      if (['google', 'googleZoom', 'apple', 'yandex', 'bing', 'naver', 'mapillary'].includes(settings.provider)) {
-        const gen = getCameraGeneration(pano, settings.provider)
-        if (gen === 0) return false
-        if (!settings.findByGeneration[settings.provider === 'googleZoom' ? 'google' : settings.provider][gen]) return false
-      }
-    }
 
     let dateWithin = false
     for (let i = 0; i < pano.time.length; i++) {
-      if (settings.rejectUnofficial && !isOfficial(pano.time[i].pano, settings.provider)) continue
-
       const timeframeDate = findDateInObject(pano.time[i])
       const iDate = parseDate(timeframeDate)
 
@@ -1778,14 +1327,12 @@ async function isPanoGood(pano: google.maps.StreetViewPanoramaData) {
     if (!dateWithin) return false
   }
 
-  if (settings.selectMonths && !settings.rejectOfficial) {
+  if (settings.selectMonths) {
     if (!pano.time?.length) return false
     let dateWithin = false
 
     if (settings.checkAllDates) {
       for (let i = 0; i < pano.time.length; i++) {
-        if (settings.rejectUnofficial && !isOfficial(pano.time[i].pano, settings.provider)) continue
-
         const timeframeDate = findDateInObject(pano.time[i])
         const { month: iDateMonth, year: iDateYear } = extractMonthYear(timeframeDate)
 
@@ -1799,24 +1346,22 @@ async function isPanoGood(pano: google.maps.StreetViewPanoramaData) {
             dateWithin = true
             break
           }
-        } else {
-          if (
-            (iDateMonth >= fromMonth || iDateMonth <= toMonth) &&
-            iDateYear >= fromYear &&
-            iDateYear <= toYear
-          ) {
-            dateWithin = true
-            break
-          }
+        } else if (
+          (iDateMonth >= fromMonth || iDateMonth <= toMonth) &&
+          iDateYear >= fromYear &&
+          iDateYear <= toYear
+        ) {
+          dateWithin = true
+          break
         }
       }
       if (!dateWithin) return false
-    } else {
+    } else if (pano.imageDate) {
       if (pano.imageDate.slice(0, 4) < fromYear || pano.imageDate.slice(0, 4) > toYear) return false
       if (fromMonth <= toMonth) {
         if (pano.imageDate.slice(5) < fromMonth || pano.imageDate.slice(5) > toMonth) return false
-      } else {
-        if (pano.imageDate.slice(5) < fromMonth && pano.imageDate.slice(5) > toMonth) return false
+      } else if (pano.imageDate.slice(5) < fromMonth && pano.imageDate.slice(5) > toMonth) {
+        return false
       }
     }
   }
@@ -1834,11 +1379,11 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
   if (polygon.checkedPanos.has(id)) return
   else polygon.checkedPanos.add(id)
 
-  StreetViewProviders.getPanorama(settings.provider, { pano: id }, async (pano, status) => {
-    if (status == google.maps.StreetViewStatus.UNKNOWN_ERROR) {
+  StreetViewProviders.getPanorama('baidu', { pano: id }, async (pano, status) => {
+    if (status == StreetViewStatus.UNKNOWN_ERROR) {
       polygon.checkedPanos.delete(id)
       return getPanoDeep(id, polygon, depth)
-    } else if (status != google.maps.StreetViewStatus.OK) return
+    } else if (status != StreetViewStatus.OK) return
 
     const inCountry = booleanPointInPolygon(
       [pano.location.latLng.lng(), pano.location.latLng.lat()],
@@ -1850,8 +1395,6 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
       const { fromDate, toDate } = getCachedDates()
 
       for (const loc of pano.time) {
-        if (settings.rejectUnofficial && !isOfficial(loc.pano, settings.provider)) continue
-
         const date = findDateInObject(loc)
         const iDate = parseDate(date)
         if (iDate >= fromDate && iDate <= toDate) {
@@ -1881,48 +1424,40 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
   })
 }
 
-function addLoc(pano: google.maps.StreetViewPanoramaData, polygon: Polygon) {
+function addLoc(pano: StreetViewPanoramaData, polygon: Polygon) {
   let heading = 0
   if (settings.heading.adjust) {
     if (settings.heading.reference === 'forward') {
       heading = pano.tiles.centerHeading
-      if (settings.provider === 'mapillary') heading = 0.5
     } else if (settings.heading.reference === 'backward') {
       heading = (pano.tiles.centerHeading + 180) % 360
-      if (settings.provider === 'mapycz') heading = degToRad((radToDeg(pano.tiles.centerHeading) + 180) % 360)
-      else if (settings.provider === 'mapillary') heading = 0
     } else if (settings.heading.reference === 'link') {
-      if (pano.links.length > 0) heading = pano.links[0].heading
-      else heading = pano.tiles.centerHeading
-      if (settings.provider === 'mapycz') heading = degToRad(heading)
+      heading = pano.links.length > 0 ? (pano.links[0].heading ?? pano.tiles.centerHeading) : pano.tiles.centerHeading
     }
     if (settings.heading.randomInRange) {
       heading += randomInRange(settings.heading.range[0], settings.heading.range[1])
-      if (settings.provider === 'mapillary') heading = headingToMapillaryX(heading, pano.tiles.centerHeading)
     } else {
       heading += Math.random() < 0.5 ? settings.heading.range[0] : settings.heading.range[1]
-      if (settings.provider === 'mapillary') heading = headingToMapillaryX(heading, pano.tiles.centerHeading)
     }
   }
+
   let pitch = 0
   if (settings.pitch.adjust) {
-    if (settings.pitch.randomInRange) {
-      pitch = randomInRange(settings.pitch.range[0], settings.pitch.range[1])
-    } else {
-      pitch = Math.random() < 0.5 ? settings.pitch.range[0] : settings.pitch.range[1]
-    }
+    pitch = settings.pitch.randomInRange
+      ? randomInRange(settings.pitch.range[0], settings.pitch.range[1])
+      : Math.random() < 0.5
+        ? settings.pitch.range[0]
+        : settings.pitch.range[1]
   }
-  if (settings.provider === 'mapillary') pitch = pitchToMapillaryY(pitch)
 
   let zoom = 0
   if (settings.zoom.adjust) {
-    if (settings.zoom.randomInRange) {
-      zoom = randomInRange(settings.zoom.range[0], settings.zoom.range[1])
-    } else {
-      zoom = Math.random() < 0.5 ? settings.zoom.range[0] : settings.zoom.range[1]
-    }
+    zoom = settings.zoom.randomInRange
+      ? randomInRange(settings.zoom.range[0], settings.zoom.range[1])
+      : Math.random() < 0.5
+        ? settings.zoom.range[0]
+        : settings.zoom.range[1]
   }
-
 
   const location: Panorama = {
     panoId: pano.location.pano,
@@ -1936,70 +1471,34 @@ function addLoc(pano: google.maps.StreetViewPanoramaData, polygon: Polygon) {
     locality: pano.location.locality,
     road: pano.location.road,
     imageDate: pano.imageDate,
-    source: `${settings.provider === 'tencent' ? 'qq' : settings.provider}_pano` || '',
+    source: 'baidu_pano',
     links: [
-      ...new Set(pano.links.map((loc) => loc.pano).concat(pano.time.map((loc) => loc.pano))),
+      ...new Set(pano.links.map((loc) => loc.pano).concat((pano.time ?? []).map((loc) => loc.pano))),
     ].sort(),
     extra: {
-      tags: [settings.provider]
-    }
+      tags: ['baidu'],
+    },
   }
 
   const index = location.links.indexOf(pano.location.pano)
   if (index != -1) location.links.splice(index, 1)
 
-  // Remove ari
-  const time = settings.rejectUnofficial
-    ? pano.time.filter((entry) => isOfficial(entry.pano, settings.provider))
-    : pano.time
-  const previousPano = time[time.length - 2]?.pano
-  // New road
+  const previousPano = pano.time?.[pano.time.length - 2]?.pano
   if (!previousPano) {
-    if (!settings.provider.includes('google')) {
-      if (['yandex', 'baidu', 'tencent', 'naver', 'kakao'].includes(settings.provider)) return addLocation(location, polygon, icons.newLoc)
-      return addLocation(location, polygon, icons.gen4)
-    }
-    if (settings.disableCheckBlueLine) return addLocation(location, polygon, icons.newLoc)
-    checkHasBlueLine(pano.location.latLng.toJSON()).then((hasBlueLine) => {
-      location.update_type = hasBlueLine ? 'newroad' : 'noblueline'
-      location.extra.tags.push(location.update_type)
-      return addLocation(location, polygon, hasBlueLine ? icons.newLoc : icons.noBlueLine)
-    })
-  } else {
-    StreetViewProviders.getPanorama(settings.provider, { pano: previousPano }, (previousPano) => {
-      if (!settings.provider.includes('google')) return addLocation(location, polygon, icons.gen4)
-      if (previousPano?.tiles?.worldSize.height === 1664) {
-        // Gen 1
-        location.update_type = 'gen1update'
-        location.extra.tags.push(location.update_type)
-        return addLocation(location, polygon, icons.gen1)
-      } else if (previousPano?.tiles?.worldSize.height === 6656) {
-        // Gen 2 or 3
-        location.update_type = 'gen2or3update'
-        location.extra.tags.push(location.update_type)
-        return addLocation(location, polygon, icons.gen2Or3)
-      } else {
-        // Gen 4
-        location.update_type = 'gen4update'
-        location.extra.tags.push(location.update_type)
-        return addLocation(location, polygon, icons.gen4)
-      }
-    })
+    location.update_type = 'newroad'
+    location.extra.tags.push(location.update_type)
+    return addLocation(location, polygon, icons.newLoc)
   }
+
+  location.update_type = 'gen4update'
+  location.extra.tags.push(location.update_type)
+  return addLocation(location, polygon, icons.gen4)
 }
 
 function getIconForUpdateType(updateType: string): L.Icon {
   switch (updateType) {
-    case 'gen1update':
-      return icons.gen1
-    case 'gen2or3update':
-      return icons.gen2Or3
-    case 'gen4update':
-      return icons.gen4
     case 'newroad':
       return icons.newLoc
-    case 'noblueline':
-      return icons.noBlueLine
     default:
       return icons.gen4
   }
@@ -2029,27 +1528,10 @@ function addLocation(
   let markerLayer = markerLayers['gen4']
   let markerType: MarkerLayersTypes = 'gen4'
   let zIndex = 1
-  switch (iconType) {
-    case icons.gen2Or3:
-      markerLayer = markerLayers['gen2Or3']
-      markerType = 'gen2Or3'
-      zIndex = 2
-      break
-    case icons.gen1:
-      markerLayer = markerLayers['gen1']
-      markerType = 'gen1'
-      zIndex = 3
-      break
-    case icons.newLoc:
-      markerLayer = markerLayers['newRoad']
-      markerType = 'newRoad'
-      zIndex = 4
-      break
-    case icons.noBlueLine:
-      markerLayer = markerLayers['noBlueLine']
-      markerType = 'noBlueLine'
-      zIndex = 5
-      break
+  if (iconType === icons.newLoc) {
+    markerLayer = markerLayers['newRoad']
+    markerType = 'newRoad'
+    zIndex = 2
   }
 
   if (polygon.found.length < polygon.nbNeeded) {
@@ -2063,37 +1545,28 @@ function addLocation(
         sendNotifications(
           'Location Found',
           `Found first location in ${getPolygonName(polygon.feature.properties)} (${elapsedTime}s)`,
-          settings.notification.sendToDiscord && settings.provider.includes('google'),
-          settings.notification.discordWebhook,
-          location
-        )
-      }
-      if (settings.notification.anyNoBlueLine && location.update_type === 'noblueline' && polygon.found.length === 1) {
-        sendNotifications(
-          'No blue line Location Found',
-          `No blue line location in ${getPolygonName(polygon.feature.properties)} (${elapsedTime}s)`,
-          settings.notification.sendToDiscord && settings.provider.includes('google'),
-          settings.notification.discordWebhook,
-          location
+          false,
+          null,
+          location,
         )
       }
       if (settings.notification.onePolygonComplete && polygon.found.length >= polygon.nbNeeded) {
         sendNotifications(
           'Polygon Completed',
           `${getPolygonName(polygon.feature.properties)} has reached its goal (${elapsedTime}s)`,
-          settings.notification.sendToDiscord && settings.provider.includes('google'),
-          settings.notification.discordWebhook
+          false,
+          null,
         )
       }
 
       if (settings.notification.allPolygonsComplete) {
-        const allComplete = selected.value.every(p => p.found.length >= p.nbNeeded)
+        const allComplete = selected.value.every((p) => p.found.length >= p.nbNeeded)
         if (allComplete) {
           sendNotifications(
             'Generation Completed',
             `All polygons have reached their goals (${elapsedTime}s)`,
-            settings.notification.sendToDiscord && settings.provider.includes('google'),
-            settings.notification.discordWebhook
+            false,
+            null,
           )
         }
       }
@@ -2122,33 +1595,6 @@ function addLocation(
       marker.imported = imported
     }
   }
-}
-
-const blueLineCanvas = document.createElement('canvas')
-async function checkHasBlueLine(latLng: LatLng) {
-  const tileSize = 256
-  // We stay somewhat zoomed out so the blue lines extend a bit more, as panoramas
-  // are often not *exactly* on the road
-  const zoom = 12
-  const [pixelX, pixelY] = llToPX([latLng.lng, latLng.lat], zoom, undefined, tileSize)
-  const tileX = Math.floor(pixelX / tileSize)
-  const tileY = Math.floor(pixelY / tileSize)
-  const image = new Image()
-  image.crossOrigin = 'anonymous'
-  image.src = `https://www.google.com/maps/vt?pb=!1m7!8m6!1m3!1i${zoom}!2i${tileX}!3i${tileY}!2i9!3x1!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*211b0*212b0!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m4!1e0!8m2!1e1!1e1!6m6!1e12!2i2!11e0!39b0!44e0!50e0`
-  await new Promise((resolve, reject) => {
-    image.onload = resolve
-    image.onerror = reject
-  })
-  blueLineCanvas.width = 256
-  blueLineCanvas.height = 256
-  const ctx = blueLineCanvas.getContext('2d', { willReadFrequently: true })
-  ctx!.drawImage(image, 0, 0)
-  // Check the pixel where the pano is
-  const imageData = ctx!.getImageData(pixelX - tileX * tileSize, pixelY - tileY * tileSize, 1, 1)
-  const alpha = imageData.data[3]
-  // Only 1 pixel, RGBA order
-  return alpha > 0
 }
 
 async function importLocations(e: Event, polygon: Polygon) {
@@ -2211,8 +1657,12 @@ async function handleGeoJSONImport(data: GeoJSON.GeoJsonObject, name: string) {
 }
 
 async function handleImportSubdivisions(data: GeoJSON.FeatureCollection, countryName: string, countryCode: string) {
+  if (countryCode.toLowerCase() !== 'cn') {
+    alert('Only China (CN) subdivisions are supported.')
+    return
+  }
+
   try {
-    // Create a new layer for subdivisions with country name
     const layerKey = `subdivisions_${countryCode.toLowerCase()}`
     const layerLabel = `${countryName}`
 

@@ -1,4 +1,4 @@
-import { countryCodeMap } from '../constants'
+import { countryCodeMap, normalizeChinaCountryCode } from '../constants'
 
 export interface SearchResult {
   display_name: string
@@ -23,9 +23,13 @@ function convertCountryCode(code2: string): string | null {
   return countryCodeMap[lower] || null
 }
 
+export function isChinaSearchResult(result: SearchResult): boolean {
+  return normalizeChinaCountryCode(result.address?.country_code) === 'cn'
+}
+
 export async function getOSMID(placeName: string): Promise<SearchResult[] | null> {
   try {
-    const nominatimURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&addressdetails=1&limit=5`
+    const nominatimURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&addressdetails=1&limit=5&countrycodes=cn`
     const response = await fetch(nominatimURL, {
       headers: {
         'Accept-Language': 'en-US,en;q=0.9'
@@ -167,7 +171,12 @@ export async function downloadGeoJSON(osmID: number) {
  * @returns FeatureCollection with compressed subdivisions, preserving all properties
  */
 export async function downloadSubdivisions(countryCode2: string): Promise<GeoJSON.FeatureCollection | null> {
-  const code3 = convertCountryCode(countryCode2)
+  const normalized = normalizeChinaCountryCode(countryCode2)
+  if (!normalized) {
+    console.error(`Only China (CN) subdivisions are supported: ${countryCode2}`)
+    return null
+  }
+  const code3 = convertCountryCode(normalized)
   if (!code3) {
     console.error(`Invalid country code: ${countryCode2}`)
     return null

@@ -1,18 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import GeoIcon from '@/assets/icons/geoicon.svg'
-import GoogleIcon from '@/assets/icons/google.svg'
-import AppleIcon from '@/assets/icons/apple.svg'
-import MapyCZIcon from '@/assets/icons/mapycz.svg'
-import YandexIcon from '@/assets/icons/yandex.svg'
-import BingIcon from '@/assets/icons/bing.svg'
 import BaiduIcon from '@/assets/icons/baidu.svg'
-import KakaoIcon from '@/assets/icons/kakao.svg'
-import NaverIcon from '@/assets/icons/naver.svg'
-import MapillaryIcon from '@/assets/icons/mapillary.svg'
-import OpenMapIcon from '@/assets/icons/openmap.svg'
-import VegbilderIcon from '@/assets/icons/vegbilder.svg'
-import jaIcon from '@/assets/icons/ja.svg'
 
 const props = defineProps<{
   size?: string
@@ -21,30 +10,18 @@ const props = defineProps<{
 
 const { size = '1' } = props
 
-const icons: any = {
+const icons: Record<string, typeof BaiduIcon> = {
   geo: GeoIcon,
-  google: GoogleIcon,
-  googleZoom:GoogleIcon,
-  apple: AppleIcon,
-  yandex: YandexIcon,
-  bing: BingIcon,
-  baidu:BaiduIcon,
-  kakao:KakaoIcon,
-  naver:NaverIcon,
-  mapycz: MapyCZIcon,
-  mapillary:MapillaryIcon,
-  vegbilder:VegbilderIcon,
-  openmap: OpenMapIcon,
-  ja:jaIcon
+  baidu: BaiduIcon,
 }
 
 const iconComponent = computed(() => {
-  return icons[props.icon ?? 'geo'] ?? GeoIcon
+  return icons[props.icon ?? 'baidu'] ?? BaiduIcon
 })
 </script>
 
 <template>
-  <component :is="iconComponent" :style="{ width: size + 'rem' }"/>
+  <component :is="iconComponent" :style="{ width: size + 'rem' }" />
 </template>
 
 <style scoped>

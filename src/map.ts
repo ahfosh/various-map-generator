@@ -12,34 +12,13 @@ import 'leaflet.glify'
 
 import markerBlue from '@/assets/markers/marker-blue.png'
 import markerRed from '@/assets/markers/marker-red.png'
-import markerViolet from '@/assets/markers/marker-violet.png'
-import markerGreen from '@/assets/markers/marker-green.png'
-import markerPink from '@/assets/markers/marker-pink.png'
 
-import { capitalize, ref } from 'vue'
+import { ref } from 'vue'
 import { useStorage } from '@vueuse/core'
 import { settings } from '@/settings'
 import { isValidGeoJSON, getPolygonName, readFileAsText } from '@/composables/utils.ts'
 import { BaiduLayer } from './layers/baiduLayer'
-import { bingBaseLayer, bingTerrainLayer, bingStreetideLayer, bingBaseDarkLayer } from './layers/bingLayer'
-import { YandexLayer } from './layers/yandexLayer'
-import { AppleLayer } from './layers/appleLayer'
-import { TencentCoverageLayer } from './layers/tencentLayer'
-import { NaverLayer } from './layers/naverLayer'
-import { OpenMapLayer } from './layers/openmapLayer'
-import { MapillaryLayer } from './layers/mapillaryLayer'
-import { ASIGLayer } from './layers/asigLayer'
-import { JaLayer } from './layers/jaLayer'
-import { VegbilderLayer } from './layers/vegbilderLayer'
-import { PanoramasLayer } from './layers/panoramasLayer.js'
-import {
-  ColorScheme,
-  CARTO_MAPS_TEMPLATE,
-  TENCENT_MAPS_TEMPLATE,
-  GOOGLE_MAPS_TEMPLATE,
-  OSM_TEMPLATE,
-  PETAL_MAPS_TEMPLATE
-} from './constants'
+import { CHINA_BBOX, CHINA_CENTER, PETAL_MAPS_TEMPLATE } from './constants'
 
 import { useStore } from '@/store'
 const { selected, select, state } = useStore()
@@ -47,70 +26,18 @@ const { selected, select, state } = useStore()
 let map: L.Map
 const currentZoom = ref(1)
 
-let roadmapBaseLayer = L.tileLayer(GOOGLE_MAPS_TEMPLATE[`Roadmap_${capitalize(settings.mapTheme)}`], { maxZoom: 19 })
-let roadmapLabelsLayer = L.tileLayer(GOOGLE_MAPS_TEMPLATE[`Labels_${capitalize(settings.mapTheme)}`], { pane: 'labelPane', maxZoom: 19 },)
-let roadmapLayer = L.layerGroup([roadmapBaseLayer, roadmapLabelsLayer])
+const petalMapsLayer = L.tileLayer(
+  !['dark', 'night'].includes(settings.mapTheme) ? PETAL_MAPS_TEMPLATE.Light : PETAL_MAPS_TEMPLATE.Dark,
+)
 
-const terrainBaseLayer = L.tileLayer(GOOGLE_MAPS_TEMPLATE[`Terrain_${capitalize(settings.mapTheme)}`], { maxZoom: 19 })
-const terrainLayer = L.layerGroup([terrainBaseLayer, roadmapLabelsLayer])
-
-const satelliteBaseLayer = L.tileLayer(GOOGLE_MAPS_TEMPLATE.Satellite, { maxZoom: 19 })
-const satelliteLabelsLayer = L.tileLayer(GOOGLE_MAPS_TEMPLATE.Labels_Satellite, { pane: 'labelPane', maxZoom: 19 },)
-const satelliteLayer = L.layerGroup([satelliteBaseLayer, satelliteLabelsLayer])
-
-const osmLayer = L.tileLayer(!['dark', 'night'].includes(settings.mapTheme) ? OSM_TEMPLATE.Standard : OSM_TEMPLATE.Dark, { maxZoom: 18 })
-
-const cartoLayer = L.tileLayer(['dark', 'night'].includes(settings.mapTheme) ? CARTO_MAPS_TEMPLATE.Dark : CARTO_MAPS_TEMPLATE.Light)
-
-let bingMapsLayer = L.layerGroup([!['dark', 'night'].includes(settings.mapTheme) ? bingBaseLayer : bingBaseDarkLayer, bingTerrainLayer])
-
-const petalMapsLayer = L.tileLayer(!['dark', 'night'].includes(settings.mapTheme) ? PETAL_MAPS_TEMPLATE.Light : PETAL_MAPS_TEMPLATE.Dark)
-
-const tencentBaseLayer = L.tileLayer(!['dark', 'night'].includes(settings.mapTheme) ? TENCENT_MAPS_TEMPLATE.Light : TENCENT_MAPS_TEMPLATE.Dark, { subdomains: ["0", "1", "2", "3"], minNativeZoom: 3, minZoom: 1 })
-
-const gsvLayer = L.tileLayer(settings.coverage.blobby ? GOOGLE_MAPS_TEMPLATE.StreetView_Blobby : GOOGLE_MAPS_TEMPLATE.StreetView, { maxZoom: 19, opacity: settings.coverage.opacity })
-const gsvLayer2 = L.tileLayer(settings.coverage.blobby ? GOOGLE_MAPS_TEMPLATE.StreetView_Blobby : GOOGLE_MAPS_TEMPLATE.StreetView_Official, { maxZoom: 19, opacity: settings.coverage.opacity })
-const gsvLayer3 = L.tileLayer(settings.coverage.blobby ? GOOGLE_MAPS_TEMPLATE.StreetView_Blobby : GOOGLE_MAPS_TEMPLATE.StreetView_Unofficial, { maxZoom: 19, opacity: settings.coverage.opacity })
-const gsvLayer4 = new PanoramasLayer({ minZoom: 16, pane: "panoramasPane" });
-
-const appleCoverageLayer = L.tileLayer('https://lookmap.skzk.dev/bluelines_raster_2x/{z}/{x}/{y}.png', { minZoom: 1, maxZoom: 7 })
-
-const baiduCoverageLayer = new BaiduLayer({ filter: "hue-rotate(140deg) saturate(200%)" })
-
-const yandexCoverageLayer = new YandexLayer()
-
-//const mapyczCoverageLayer = L.tileLayer('https://mapserver.mapy.cz/panorama_hybrid-m/{z}-{x}-{y}', { minZoom: 5, subdomains: ["0", "1", "2", "3"] })
+const baiduCoverageLayer = new BaiduLayer({ filter: 'hue-rotate(140deg) saturate(200%)' })
 
 const baseMaps = {
-  "Google Roadmap": roadmapLayer,
-  "Google Satellite": satelliteLayer,
-  "Google Terrain": terrainLayer,
-  Carto: cartoLayer,
-  OSM: osmLayer,
-  Bing: bingMapsLayer,
-  Tencent: tencentBaseLayer,
   Petal: petalMapsLayer,
 }
 
 const overlayMaps = {
-  'Google Street View': gsvLayer,
-  'Google Street View Official Only': gsvLayer2,
-  'Google Unofficial Coverage Only': gsvLayer3,
-  'Google Street View Panoramas((requires zoom level 16+)': gsvLayer4,
-  'Apple Look Around': appleCoverageLayer,
-  'Apple Look Around (requires zoom level 10+)': AppleLayer,
-  'Bing Streetside': bingStreetideLayer,
-  'Yandex Panorama': yandexCoverageLayer,
-  'Naver Panorama (requires zoom level 15+)': NaverLayer,
-  'Mapillary (requires zoom level 15+)': MapillaryLayer,
-  'Streetview.vn (requires zoom level 10+)': OpenMapLayer,
-  //'Mapy.cz Panorama  (Only Works at Zoom Level 5+)': mapyczCoverageLayer,
-  'Tencent Street View (requires zoom level 5+)': TencentCoverageLayer,
-  'Baidu Street View (requires zoom level5+)': baiduCoverageLayer,
-  'Já 360 (requires zoom level 5+)': JaLayer,
-  'AlbaniaStreetView': ASIGLayer,
-  'Vegbilder Norway (requires zoom level 10+)': VegbilderLayer,
-
+  'Baidu Street View (requires zoom level 5+)': baiduCoverageLayer,
 }
 
 const allLayers = [
@@ -191,13 +118,17 @@ async function initMap(el: string) {
       { text: 'Copy Coordinates', callback: copyCoords },
       { text: 'See Nearest Pano', callback: openNearestPano },
     ],
-    center: [0, 0],
+    center: CHINA_CENTER,
     preferCanvas: true,
-    zoom: 1,
-    minZoom: 1,
+    zoom: 4,
+    minZoom: 3,
     maxZoom: 19,
     zoomControl: false,
-    worldCopyJump: true,
+    maxBounds: [
+      [CHINA_BBOX.south, CHINA_BBOX.west],
+      [CHINA_BBOX.north, CHINA_BBOX.east],
+    ],
+    maxBoundsViscosity: 0.85,
   })
 
   map.createPane('labelPane')
@@ -205,7 +136,7 @@ async function initMap(el: string) {
   map.getPane('labelPane')!.style.zIndex = '300';
   map.getPane("panoramasPane")!.style.zIndex = '500';
 
-  const selectedBase = baseMaps[storedLayers.value.base] || roadmapLayer
+  const selectedBase = baseMaps[storedLayers.value.base] || petalMapsLayer
   selectedBase.addTo(map)
 
   storedLayers.value.overlays.forEach((name) => {
@@ -334,103 +265,23 @@ async function initMap(el: string) {
   return map
 }
 
-function toggleMap(provider: string) {
-  function resetLayer() {
-    allLayers.forEach(layer => {
-      if (map.hasLayer(layer)) {
-        map.removeLayer(layer);
-      }
-    });
-  }
-  if (provider.includes('google')) {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    gsvLayer2.addTo(map)
-  }
-  else if (provider === 'apple') {
-    resetLayer()
-    appleCoverageLayer.addTo(map)
-    cartoLayer.addTo(map)
-    AppleLayer.addTo(map)
-  }
-  else if (provider === 'bing') {
-    resetLayer()
-    bingMapsLayer.addTo(map)
-    bingStreetideLayer.addTo(map)
-  }
-  else if (provider === 'tencent') {
-    resetLayer()
-    tencentBaseLayer.addTo(map)
-    TencentCoverageLayer.addTo(map)
-  }
-  else if (provider === 'baidu') {
-    resetLayer()
-    petalMapsLayer.addTo(map)
-    baiduCoverageLayer.addTo(map)
-  }
-  else if (provider === 'yandex') {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    yandexCoverageLayer.addTo(map)
-  }
-  else if (provider === 'naver') {
-    resetLayer()
-    cartoLayer.addTo(map)
-    NaverLayer.addTo(map)
-  }
-  else if (provider === 'mapillary') {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    MapillaryLayer.addTo(map)
-  }
-  else if (provider === 'openmap') {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    OpenMapLayer.addTo(map)
-    map.flyTo([14.0583, 108.2772], map.getZoom()) // Center on Vietnam
-  }
-  else if (provider === 'asig') {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    ASIGLayer.addTo(map)
-    map.flyTo([41.3275, 19.8189], map.getZoom()) // Center on Albania
-  }
-  else if (provider === 'ja') {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    JaLayer.addTo(map)
-    map.flyTo([64.9631, -19.0208], map.getZoom()) // Center on Iceland
-  }
-  else if (provider === 'vegbilder') {
-    resetLayer()
-    roadmapLayer.addTo(map)
-    VegbilderLayer.addTo(map)
-    map.flyTo([60.4720, 8.4689], map.getZoom()) // Center on Norway
-  }
+function toggleMap() {
+  allLayers.forEach((layer) => {
+    if (map.hasLayer(layer)) {
+      map.removeLayer(layer)
+    }
+  })
+  petalMapsLayer.addTo(map)
+  baiduCoverageLayer.addTo(map)
 }
 
 const copyCoords = (e: L.ContextMenuItemClickEvent) => {
   navigator.clipboard.writeText(e.latlng.lat.toFixed(7) + ', ' + e.latlng.lng.toFixed(7))
 }
 const openNearestPano = (e: L.ContextMenuItemClickEvent) => {
-  switch (settings.provider) {
-    case 'google':
-      open(
-        `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${e.latlng.lat},${e.latlng.lng}`,
-      )
-      break
-    case 'apple':
-      open(`https://lookmap.skzk.dev/#c=18/${e.latlng.lat}/${e.latlng.lng}&p=${e.latlng.lat}/${e.latlng.lng}`)
-      break
-    case 'bing':
-      open(
-        `https://www.bing.com/maps/?style=x&lvl=18&cp=${e.latlng.lat}%7E${e.latlng.lng}&v=2&form=LMLTCC`)
-      break
-    default:
-      open(
-        `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${e.latlng.lat},${e.latlng.lng}`,
-      )
-  }
+  open(
+    `https://map.baidu.com/?newmap=1&shareurl=1&panotype=street&l=18&tn=B_NORMAL_MAP&sc=0&pc=${e.latlng.lng},${e.latlng.lat}`,
+  )
 }
 
 function initPolygon(polygon: Polygon) {
@@ -460,8 +311,8 @@ const storedLayers = useStorage<{
   base: BaseMapName
   overlays: OverlayMapName[]
 }>('map_generator__layers', {
-  base: 'Google Roadmap',
-  overlays: ['Google Street View Official Only'],
+  base: 'Petal',
+  overlays: ['Baidu Street View (requires zoom level 5+)'],
 })
 
 const baseLayerToName = new Map<L.Layer, string>()
@@ -474,23 +325,17 @@ for (const [name, layer] of Object.entries(overlayMaps)) {
   overlayLayerToName.set(layer, name)
 }
 
-type MarkerLayersTypes = 'gen4' | 'gen2Or3' | 'gen1' | 'newRoad' | 'noBlueLine'
+type MarkerLayersTypes = 'gen4' | 'newRoad'
 const markerLayers: Record<MarkerLayersTypes, L.MarkerClusterGroup> = {
   gen4: L.markerClusterGroup({ maxClusterRadius: 100, disableClusteringAtZoom: 15 }),
-  gen2Or3: L.markerClusterGroup({ maxClusterRadius: 100, disableClusteringAtZoom: 15 }),
-  gen1: L.markerClusterGroup({ maxClusterRadius: 100, disableClusteringAtZoom: 15 }),
   newRoad: L.markerClusterGroup({ maxClusterRadius: 100, disableClusteringAtZoom: 15 }),
-  noBlueLine: L.markerClusterGroup({ maxClusterRadius: 100, disableClusteringAtZoom: 15 }),
 }
 
 // ============ High Performance WebGL Rendering (glify) ============
 // Color scheme matching the marker icons (RGB values 0-255 normalized to 0-1)
 const GLIFY_COLORS: Record<MarkerLayersTypes, L.glify.IColor> = {
-  gen4: { r: 40 / 255, g: 128 / 255, b: 202 / 255 },       // #2880CA
-  gen2Or3: { r: 154 / 255, g: 40 / 255, b: 202 / 255 },   // #9A28CA
-  gen1: { r: 36 / 255, g: 172 / 255, b: 32 / 255 },       // #24AC20
-  newRoad: { r: 202 / 255, g: 40 / 255, b: 63 / 255 },    // #CA283F
-  noBlueLine: { r: 228 / 255, g: 18 / 255, b: 210 / 255 }, // #E412D2 
+  gen4: { r: 40 / 255, g: 128 / 255, b: 202 / 255 },
+  newRoad: { r: 202 / 255, g: 40 / 255, b: 63 / 255 },
 }
 
 // Store point data for WebGL rendering
@@ -521,12 +366,12 @@ let lastRenderedCount = 0
 function getPointVisibilityFilter(): (point: GlifyPoint) => boolean {
   return (point) => {
     switch (point.type) {
-      case 'gen4': return settings.markers.gen4
-      case 'gen2Or3': return settings.markers.gen2Or3
-      case 'gen1': return settings.markers.gen1
-      case 'newRoad': return settings.markers.newRoad
-      case 'noBlueLine': return settings.markers.noBlueLine
-      default: return true
+      case 'gen4':
+        return settings.markers.gen4
+      case 'newRoad':
+        return settings.markers.newRoad
+      default:
+        return true
     }
   }
 }
@@ -745,16 +590,10 @@ export interface LayerMeta {
 }
 const availableLayers = ref<LayerMeta[]>([
   {
-    label: 'World Borders',
-    key: 'world_borders',
-    source: '/geojson/world_borders.json',
-    visible: true,
-  },
-  {
     label: 'China Borders',
     key: 'china_borders',
     source: '/geojson/china_borders.json',
-    visible: false,
+    visible: true,
   },
   {
     label: 'Drawn polygons',
@@ -780,8 +619,7 @@ async function loadLayer(layer: LayerMeta) {
       data = layer.source as unknown as GeoJSON.GeoJsonObject
     }
 
-    const style =
-      layer.key === 'world_borders' ? polygonStyles.defaultHidden : polygonStyles.customPolygonStyle
+    const style = polygonStyles.customPolygonStyle
 
     geoJsonLayer = L.geoJSON(data, { style, onEachFeature })
     geoJsonLayer.eachLayer((polygon) => {
@@ -802,102 +640,13 @@ async function toggleLayer(layer: LayerMeta) {
   }
 }
 
-function replaceBaseLayerContents(name: string, newChildren: L.Layer[]): boolean {
-  const layerObj = (baseMaps as any)[name] as L.Layer | undefined
-  if (!layerObj) return false
-
-  const layerGroupLike = layerObj as unknown as L.LayerGroup
-  if (typeof (layerGroupLike as any).clearLayers === 'function' && typeof (layerGroupLike as any).addLayer === 'function') {
-    try {
-      layerGroupLike.clearLayers()
-      newChildren.forEach((ch) => layerGroupLike.addLayer(ch))
-      return true
-    } catch (err) {
-      console.error('replaceBaseLayerContents error', err)
-      return false
-    }
-  }
-  return false
-}
-
 function toggleMapTheme(theme: string) {
-  if (!map || !storedLayers) return
-  const activeBaseLayer = storedLayers.value.base
-  const storedOverlays = storedLayers.value.overlays
-
-  if (activeBaseLayer == 'Google Roadmap' || activeBaseLayer == 'Google Terrain') {
-    toggleGoogleMapsTheme(theme)
-  }
-  if (theme == 'dark' || theme == 'night') {
-    if (activeBaseLayer == 'Bing') {
-      const children = storedOverlays.includes('Bing Streetside')
-        ? [bingBaseDarkLayer, bingTerrainLayer, bingStreetideLayer]
-        : [bingBaseDarkLayer, bingTerrainLayer]
-
-      replaceBaseLayerContents('Bing', children)
-    }
-    else if (activeBaseLayer == 'Carto') {
-      cartoLayer.setUrl(CARTO_MAPS_TEMPLATE.Dark)
-    }
-    else if (activeBaseLayer == 'OSM') {
-      osmLayer.setUrl(OSM_TEMPLATE.Dark)
-    }
-    else if (activeBaseLayer == 'Petal') {
-      petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE.Dark)
-    }
-    else if (activeBaseLayer == 'Tencent') {
-      tencentBaseLayer.setUrl(TENCENT_MAPS_TEMPLATE.Dark)
-    }
-
+  if (!map) return
+  if (theme === 'dark' || theme === 'night') {
+    petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE.Dark)
   } else {
-    if (activeBaseLayer == 'Bing') {
-      const children = storedOverlays.includes('Bing Streetside')
-        ? [bingBaseLayer, bingTerrainLayer, bingStreetideLayer]
-        : [bingBaseLayer, bingTerrainLayer]
-
-      replaceBaseLayerContents('Bing', children)
-    }
-    else if (activeBaseLayer == 'Carto') {
-      cartoLayer.setUrl(CARTO_MAPS_TEMPLATE.Light)
-    }
-    else if (activeBaseLayer == 'OSM') {
-      osmLayer.setUrl(OSM_TEMPLATE.Standard)
-    }
-    else if (activeBaseLayer == 'Petal') {
-      petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE.Light)
-    }
-    else if (activeBaseLayer == 'Tencent') {
-      tencentBaseLayer.setUrl(TENCENT_MAPS_TEMPLATE.Light)
-    }
+    petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE.Light)
   }
-}
-
-function toggleGoogleMapsTheme(theme: string) {
-  roadmapBaseLayer.setUrl(GOOGLE_MAPS_TEMPLATE[`Roadmap_${capitalize(theme)}`])
-  terrainBaseLayer.setUrl(GOOGLE_MAPS_TEMPLATE[`Terrain_${capitalize(theme)}`])
-  roadmapLabelsLayer.setUrl(GOOGLE_MAPS_TEMPLATE[`Labels_${capitalize(theme)}`])
-}
-
-function setGSVLayerStyle() {
-  if (settings.coverage.blobby) {
-    toggleGSVBlobbyLayer()
-    return
-  }
-  const [stroke, fill] = ColorScheme[settings.coverage.colorScheme]
-  const [line_width, stroke_width] = [settings.coverage.line, settings.coverage.stroke]
-  gsvLayer.setUrl(`https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m8%211e2%212ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*212b1%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%2Cs.e%3Ag.f%7Cp.c%3A%23${stroke}%7Cp.w%3A${line_width}%2Cs.e%3Ag.s%7Cp.c%3A%23${fill}%7Cp.w%3A${stroke_width}%215m1%215f1.35`)
-  gsvLayer2.setUrl(`https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m8%211e2%212ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*212b1%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%2Cs.e%3Ag.f%7Cp.c%3A%23${stroke}%7Cp.w%3A${line_width}%2Cs.e%3Ag.s%7Cp.c%3A%23${fill}%7Cp.w%3A${stroke_width}%215m1%215f1.35`)
-  gsvLayer3.setUrl(`https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i{z}%212i{x}%213i{y}%214i256%212m8%211e2%212ssvv%214m2%211scc%212s*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*212b1%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%2Cs.e%3Ag.f%7Cp.c%3A%23${stroke}%7Cp.w%3A${line_width}%2Cs.e%3Ag.s%7Cp.c%3A%23${fill}%7Cp.w%3A${stroke_width}%215m1%215f1.35`)
-}
-
-function toggleGSVBlobbyLayer() {
-  if (settings.coverage.blobby) {
-    const [stroke, fill] = ColorScheme[settings.coverage.colorScheme]
-    gsvLayer.setUrl(`https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m8!1e2!2ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*21%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%215m1%215f1.35`)
-    gsvLayer2.setUrl(`https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m8!1e2!2ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*21%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%215m1%215f1.35`)
-    gsvLayer3.setUrl(`https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m8!1e2!2ssvv%214m2%211scc%212s*211m3*211e2*212b1*213e2*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1%214m2%211ssvl%212s*21%213m16%212sen%213sUS%2112m4%211e68%212m2%211sset%212sRoadmap%2112m3%211e37%212m1%211ssmartmaps%2112m4%211e26%212m2%211sstyles%212sp.c%3A%23${stroke}%215m1%215f1.35`)
-  }
-  else setGSVLayerStyle()
 }
 
 function setCoverageLayerOpacity(opacity: number) {
@@ -937,9 +686,7 @@ function deselectLayer(layerKey: string) {
       idsToRemove.add(p._leaflet_id)
     }
   })
-  layer.setStyle(
-    layerKey === 'world_borders' ? polygonStyles.defaultHidden : polygonStyles.customPolygonStyle,
-  )
+  layer.setStyle(polygonStyles.customPolygonStyle)
   selected.value = selected.value.filter((p) => !idsToRemove.has(p._leaflet_id))
 }
 
@@ -1094,10 +841,7 @@ function updateMarkerLayers(gen: MarkerLayersTypes) {
 
   if (
     (gen === 'gen4' && settings.markers.gen4) ||
-    (gen === 'gen2Or3' && settings.markers.gen2Or3) ||
-    (gen === 'gen1' && settings.markers.gen1) ||
-    (gen === 'newRoad' && settings.markers.newRoad) ||
-    (gen === 'noBlueLine' && settings.markers.noBlueLine)
+    (gen === 'newRoad' && settings.markers.newRoad)
   ) {
     map.addLayer(markerLayers[gen])
     if (!settings.markers.cluster) markerLayers[gen].disableClustering()
@@ -1164,7 +908,7 @@ function resetHighlight(e: L.LeafletMouseEvent) {
   if (!selected.value.some((x) => x._leaflet_id === polygon._leaflet_id)) {
     polygon.setStyle(polygonStyles.removeHighlight())
   }
-  select.value = 'Select a country or draw a polygon'
+  select.value = 'Select a China region or draw a polygon'
 }
 
 const polygonStyles = {
@@ -1197,11 +941,8 @@ function getRandomColor() {
 }
 
 const icons = {
-  gen1: L.icon({ iconUrl: markerGreen, iconAnchor: [12, 41] }),
-  gen2Or3: L.icon({ iconUrl: markerViolet, iconAnchor: [12, 41] }),
   gen4: L.icon({ iconUrl: markerBlue, iconAnchor: [12, 41] }),
   newLoc: L.icon({ iconUrl: markerRed, iconAnchor: [12, 41] }),
-  noBlueLine: L.icon({ iconUrl: markerPink, iconAnchor: [12, 41] }),
 }
 
 export {
@@ -1212,9 +953,7 @@ export {
   deselectLayer,
   toggleLayer,
   toggleMapTheme,
-  toggleGSVBlobbyLayer,
   setCoverageLayerOpacity,
-  setGSVLayerStyle,
   importLayer,
   importGeoJSONFromSearch,
   exportLayer,
