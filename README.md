@@ -1,6 +1,6 @@
-# MapGenerator
+# 地图生成器
 
-Geoguessr/Tuxun map generator (supports multi-providers)
+GeoGuessr / 图寻 地图生成器（支持多数据源）
 
 ```shell
 $ pnpm i

@@ -4,18 +4,18 @@ import type {
   StreetViewPanoramaData,
 } from '@/streetview-types'
 
-export const MONTHS_NAME = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+export const MONTHS_NAME = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
-export function getCountryName(countryCode: string, locale: string = 'en'): string {
+export function getCountryName(countryCode: string, locale: string = 'zh'): string {
   try {
     if (!countryCode) {
-      return 'Unknown'
+      return '未知'
     }
     const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
     return displayNames.of(countryCode.toUpperCase()) || countryCode;
   } catch (error) {
-    console.warn('Failed to get country name:', error);
-    return countryCode || 'Unknown';
+    console.warn('获取国家名称失败：', error);
+    return countryCode || '未知';
   }
 }
 
@@ -38,11 +38,11 @@ async function createDiscordMessage(title: string, pano: {
   road: string;
   update_type: string;
 }): Promise<string> {
-  let position_word = 'in'
+  let position_word = '位于'
   if (pano.locality) {
-    if (pano.road && pano.road == pano.locality) position_word = 'on'
+    if (pano.road && pano.road == pano.locality) position_word = '在'
   }
-  else if (pano.road) position_word = 'on'
+  else if (pano.road) position_word = '在'
   const link = `https://map.baidu.com/?newmap=1&shareurl=1&panotype=street&l=21&tn=B_NORMAL_MAP&sc=0&panoid=${pano.panoId}&pid=${pano.panoId}`;
   const countryName = getCountryName(pano.country || '');
   const countryCode = pano.country ? pano.country.toLowerCase() : 'xx';
@@ -66,7 +66,7 @@ export async function sendToDiscord(url: string,
   const content = data ? await createDiscordMessage(title, data) : title;
   const payload = JSON.stringify({
     content,
-    username: "Various MapGenerator",
+    username: "百度地图生成器",
     avatar_url: "https://various-map-generator.pages.dev/favicon.png"
   });
   try {
@@ -803,13 +803,13 @@ export function getPolygonName(properties: Polygon['feature']['properties']) {
     properties.COUNTRY ||
     properties.id ||
     properties.ID ||
-    'Untitled Polygon'
+    '未命名多边形'
   )
 }
 
 export function changePolygonName(properties: Polygon['feature']['properties']) {
   // if (typeof polygon.feature.properties.code == 'undefined') {
-  const newName = prompt('New name for polygon: ')
+  const newName = prompt('多边形新名称：')
   if (typeof newName === 'string' && newName !== '') {
     properties.name = newName
   }

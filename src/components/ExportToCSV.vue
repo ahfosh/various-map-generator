@@ -1,5 +1,5 @@
 <template>
-  <Button size="sm" squared :disabled title="Export to CSV" @click="handleExport">
+  <Button size="sm" squared :disabled title="导出为 CSV" @click="handleExport">
     <FileCSV class="w-5 h-5" />
   </Button>
 </template>
@@ -23,7 +23,7 @@ function handleExport() {
     })
   })
   const dataUri = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`
-  const fileName = `Generated map (${nbLocs} location${nbLocs > 1 ? 's' : ''}).csv`
+  const fileName = `生成的地图（${nbLocs} 个地点）.csv`
   const linkElement = document.createElement('a')
   linkElement.href = dataUri
   linkElement.download = fileName

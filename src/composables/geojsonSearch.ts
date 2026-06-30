@@ -32,7 +32,7 @@ export async function getOSMID(placeName: string): Promise<SearchResult[] | null
     const nominatimURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&addressdetails=1&limit=5&countrycodes=cn`
     const response = await fetch(nominatimURL, {
       headers: {
-        'Accept-Language': 'en-US,en;q=0.9'
+        'Accept-Language': 'zh-CN,zh;q=0.9'
       }
     })
     const data = await response.json()
@@ -51,7 +51,7 @@ export async function getAddressFromOSMID(osmId: number): Promise<SearchResult |
     const nominatimURL = `https://nominatim.openstreetmap.org/lookup?osm_ids=R${osmId}&format=json&addressdetails=1`
     const response = await fetch(nominatimURL, {
       headers: {
-        'Accept-Language': 'en-US,en;q=0.9'
+        'Accept-Language': 'zh-CN,zh;q=0.9'
       }
     })
     const data = await response.json()

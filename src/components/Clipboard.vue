@@ -1,5 +1,5 @@
 <template>
-  <Button v-if="isSupported" size="sm" squared :disabled title="Copy to clipboard" @click="handleCopy">
+  <Button v-if="isSupported" size="sm" squared :disabled title="复制到剪贴板" @click="handleCopy">
     <ClipboardCheckedIcon v-if="copied" class="w-5 h-5" />
     <ClipboardIcon v-else class="w-5 h-5" />
   </Button>

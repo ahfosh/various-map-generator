@@ -75,14 +75,14 @@ const defaultSettings = {
     tileColors: {
       gmaps: [
         {
-          label: 'Roads, streets',
+          label: '道路、街道',
           active: false,
           threshold: 0.05,
           colors: ['170,185,201', '193,204,216', '186,201,215'],
         },
       ],
       osm: [
-        { label: 'White road', active: false, threshold: 0.05, colors: ['255,255,255'] },
+        { label: '白色道路', active: false, threshold: 0.05, colors: ['255,255,255'] },
       ],
     },
   } as TileColorConfig,

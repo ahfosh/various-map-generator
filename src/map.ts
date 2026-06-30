@@ -2,6 +2,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import '@/assets/leaflet-draw/leaflet.draw.js' // npm one is broken for rectangles so we use a patched one
 import '@/assets/leaflet-draw/leaflet.draw.css'
+import { applyLeafletDrawZh } from '@/i18n/leafletDrawZh'
+applyLeafletDrawZh()
 import 'leaflet.markercluster'
 import 'leaflet.markercluster.freezable/dist/leaflet.markercluster.freezable.js'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
@@ -33,11 +35,11 @@ const petalMapsLayer = L.tileLayer(
 const baiduCoverageLayer = new BaiduLayer({ filter: 'hue-rotate(140deg) saturate(200%)' })
 
 const baseMaps = {
-  Petal: petalMapsLayer,
+  花瓣地图: petalMapsLayer,
 }
 
 const overlayMaps = {
-  'Baidu Street View (requires zoom level 5+)': baiduCoverageLayer,
+  '百度街景（需要缩放级别 5 以上）': baiduCoverageLayer,
 }
 
 const allLayers = [
@@ -69,17 +71,17 @@ L.DrawToolbar.include({
       {
         enabled: this.options.polygon !== false,
         handler: new L.Draw.Polygon(map, this.options.polygon),
-        title: 'Draw a polygon',
+        title: '绘制多边形',
       },
       {
         enabled: this.options.rectangle !== false,
         handler: new L.Draw.Rectangle(map, this.options.rectangle),
-        title: 'Draw a rectangle',
+        title: '绘制矩形',
       },
       {
         enabled: this.options.polygonHole !== false,
         handler: new (L.Draw as any).PolygonHole(map, this.options.polygonHole),
-        title: 'Draw a polygon hole',
+        title: '绘制多边形孔洞',
       },
     ];
   },
@@ -99,7 +101,7 @@ const drawControl = new L.Control.Draw({
       drawError: {
         color: '#e1e100',
         message:
-          '<strong>Polygon draw does not allow intersections!<strong> (allowIntersection: false)',
+          '<strong>多边形绘制不允许交叉！<strong>（allowIntersection: false）',
       },
       shapeOptions: { color: '#5d8ce3' },
     },
@@ -115,8 +117,8 @@ async function initMap(el: string) {
     attributionControl: false,
     contextmenu: true,
     contextmenuItems: [
-      { text: 'Copy Coordinates', callback: copyCoords },
-      { text: 'See Nearest Pano', callback: openNearestPano },
+      { text: '复制坐标', callback: copyCoords },
+      { text: '查看最近全景图', callback: openNearestPano },
     ],
     center: CHINA_CENTER,
     preferCanvas: true,
@@ -208,7 +210,7 @@ async function initMap(el: string) {
     }
     const polygon = event.layer as Polygon
     polygon.feature = event.layer.toGeoJSON()
-    polygon.feature.properties.name = `Custom polygon ${drawnPolygonsLayer.getLayers().length + 1}`
+    polygon.feature.properties.name = `自定义多边形 ${drawnPolygonsLayer.getLayers().length + 1}`
     initPolygon(polygon)
     polygon.setStyle(polygonStyles.customPolygonStyle())
     polygon.setStyle(polygonStyles.highlighted())
@@ -307,13 +309,25 @@ const loadedLayers: Record<string, L.GeoJSON> = {}
 
 type BaseMapName = keyof typeof baseMaps
 type OverlayMapName = keyof typeof overlayMaps
+const LEGACY_LAYER_NAMES: Record<string, string> = {
+  Petal: '花瓣地图',
+  'Baidu Street View (requires zoom level 5+)': '百度街景（需要缩放级别 5 以上）',
+}
+
 const storedLayers = useStorage<{
   base: BaseMapName
   overlays: OverlayMapName[]
 }>('map_generator__layers', {
-  base: 'Petal',
-  overlays: ['Baidu Street View (requires zoom level 5+)'],
+  base: '花瓣地图',
+  overlays: ['百度街景（需要缩放级别 5 以上）'],
 })
+
+if (LEGACY_LAYER_NAMES[storedLayers.value.base]) {
+  storedLayers.value.base = LEGACY_LAYER_NAMES[storedLayers.value.base] as BaseMapName
+}
+storedLayers.value.overlays = storedLayers.value.overlays.map(
+  (name) => (LEGACY_LAYER_NAMES[name] ?? name) as OverlayMapName,
+)
 
 const baseLayerToName = new Map<L.Layer, string>()
 for (const [name, layer] of Object.entries(baseMaps)) {
@@ -590,13 +604,13 @@ export interface LayerMeta {
 }
 const availableLayers = ref<LayerMeta[]>([
   {
-    label: 'China Borders',
+    label: '中国边界',
     key: 'china_borders',
     source: '/geojson/china_borders.json',
     visible: true,
   },
   {
-    label: 'Drawn polygons',
+    label: '已绘制多边形',
     key: 'drawn_polygons',
     source: drawnPolygonsLayer,
     visible: true,
@@ -707,7 +721,7 @@ async function importLayer(e: Event) {
       const json = JSON.parse(result)
       
       if (!isValidGeoJSON(json)) {
-        throw new Error('Invalid GeoJSON structure.')
+        throw new Error('GeoJSON 结构无效。')
       }
 
       // Generate unique key using timestamp and random id to avoid duplicates
@@ -741,7 +755,7 @@ function exportLayer(l: LayerMeta) {
 
   const dataUri =
     'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(layer.toGeoJSON()))
-  const fileName = l.label ?? 'Custom Layer'
+  const fileName = l.label ?? '自定义图层'
   const linkElement = document.createElement('a')
   linkElement.href = dataUri
   linkElement.download = fileName
@@ -751,7 +765,7 @@ function exportLayer(l: LayerMeta) {
 async function importGeoJSONFromSearch(geojson: GeoJSON.GeoJsonObject, name: string) {
   if (!isValidGeoJSON(geojson)) {
     console.error('Invalid GeoJSON received:', geojson)
-    throw new Error('Invalid GeoJSON structure. Please try a different location.')
+    throw new Error('GeoJSON 结构无效，请尝试其他地点。')
   }
 
   try {
@@ -765,7 +779,7 @@ async function importGeoJSONFromSearch(geojson: GeoJSON.GeoJsonObject, name: str
     }
 
     if (features.length === 0) {
-      throw new Error('No valid features found in GeoJSON')
+      throw new Error('GeoJSON 中未找到有效要素')
     }
 
     // Add each feature as a polygon to drawnPolygonsLayer
@@ -828,7 +842,7 @@ async function importGeoJSONFromSearch(geojson: GeoJSON.GeoJsonObject, name: str
     
   } catch (err) {
     console.error('Error importing GeoJSON:', err)
-    throw new Error(`Failed to import GeoJSON: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    throw new Error(`导入 GeoJSON 失败：${err instanceof Error ? err.message : '未知错误'}`)
   }
 }
 
@@ -908,7 +922,7 @@ function resetHighlight(e: L.LeafletMouseEvent) {
   if (!selected.value.some((x) => x._leaflet_id === polygon._leaflet_id)) {
     polygon.setStyle(polygonStyles.removeHighlight())
   }
-  select.value = 'Select a China region or draw a polygon'
+  select.value = '选择中国区域或绘制多边形'
 }
 
 const polygonStyles = {

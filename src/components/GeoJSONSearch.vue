@@ -29,14 +29,13 @@ const loadingSubdivisions = ref(false)
 const hasResults = computed(() => searchResults.value.length > 0)
 
 function getAddressInfo(result: SearchResult): string {
-  // Build a detailed address from components
   const parts: string[] = []
 
   if (result.address?.country_code) {
     const normalized = normalizeChinaCountryCode(result.address.country_code)
     if (normalized) {
       result.address.country_code = normalized
-      result.address.country = 'China'
+      result.address.country = '中国'
     }
   }
   if (result.address) {
@@ -49,7 +48,6 @@ function getAddressInfo(result: SearchResult): string {
   }
 
   if (parts.length === 0) {
-    // Fallback: parse from display_name
     const displayParts = result.display_name.split(',')
     return displayParts.slice(0, 3).map(s => s.trim()).join(', ')
   }
@@ -73,7 +71,7 @@ async function handleSearch() {
       const addressInfo = await getAddressFromOSMID(osmId)
       const geojson = await downloadGeoJSON(osmId)
       if (addressInfo && !isChinaSearchResult(addressInfo)) {
-        error.value = 'Only locations in China (CN) are supported.'
+        error.value = '仅支持中国（CN）境内的地点。'
         isLoading.value = false
         isSearching.value = false
         return
@@ -86,12 +84,12 @@ async function handleSearch() {
         emit('import', geojson, placeName)
         resetSearch()
       } else {
-        error.value = 'No geojson found for this OSM ID. The database may not contain this polygon.'
+        error.value = '未找到该 OSM ID 的 GeoJSON，数据库可能不包含此多边形。'
       }
     } catch (err) {
-      let msg = 'Unknown error.'
+      let msg = '未知错误。'
       if (err instanceof Error) msg = err.message
-      error.value = `Failed to download GeoJSON: ${msg}`
+      error.value = `下载 GeoJSON 失败：${msg}`
     }
     isLoading.value = false
     isSearching.value = false
@@ -102,7 +100,7 @@ async function handleSearch() {
   if (results) {
     const chinaResults = results.filter(isChinaSearchResult)
     if (chinaResults.length === 0) {
-      error.value = 'No results found in China (CN).'
+      error.value = '未在中国（CN）境内找到结果。'
       searchResults.value = []
       showResults.value = false
       isSearching.value = false
@@ -111,7 +109,7 @@ async function handleSearch() {
     searchResults.value = chinaResults
     showResults.value = true
   } else {
-    error.value = 'No results found'
+    error.value = '未找到结果'
     searchResults.value = []
     showResults.value = false
   }
@@ -120,11 +118,11 @@ async function handleSearch() {
 
 async function handleSearchSubdivisions(result: SearchResult) {
   if (!isChinaSearchResult(result)) {
-    error.value = 'Only China (CN) subdivisions are supported.'
+    error.value = '仅支持中国（CN）的行政区划。'
     return
   }
   if (!result.address?.country_code) {
-    error.value = 'Country code not found.'
+    error.value = '未找到国家代码。'
     return
   }
 
@@ -140,19 +138,19 @@ async function handleSearchSubdivisions(result: SearchResult) {
       emit('importSubdivisions', subdivisions, countryName, countryCode)
       resetSearch()
     } else {
-      error.value = 'No subdivisions found for China. The database may not contain this data.'
+      error.value = '未找到中国的行政区划数据，数据库可能不包含此数据。'
     }
   } catch (err) {
-    let msg = 'Unknown error.'
+    let msg = '未知错误。'
     if (err instanceof Error) msg = err.message
-    error.value = `Failed to download subdivisions: ${msg}`
+    error.value = `下载行政区划失败：${msg}`
   }
   loadingSubdivisions.value = false
 }
 
 async function handleSelect(result: SearchResult) {
   if (!isChinaSearchResult(result)) {
-    error.value = 'Only locations in China (CN) are supported.'
+    error.value = '仅支持中国（CN）境内的地点。'
     return
   }
 
@@ -163,17 +161,16 @@ async function handleSelect(result: SearchResult) {
   try {
     const geojson = await downloadGeoJSON(result.osm_id)
     if (geojson && geojson.geometry && geojson.geometry.type) {
-      // Use only the first part of display_name as polygon name
       const placeName = result.display_name.split(',')[0].trim()
       emit('import', geojson, placeName)
       resetSearch()
     } else {
-      error.value = 'No geojson found for this location. The database may not contain this polygon.'
+      error.value = '未找到该地点的 GeoJSON，数据库可能不包含此多边形。'
     }
   } catch (err) {
-    let msg = 'Unknown error.'
+    let msg = '未知错误。'
     if (err instanceof Error) msg = err.message
-    error.value = `Failed to download GeoJSON: ${msg}`
+    error.value = `下载 GeoJSON 失败：${msg}`
   }
   isLoading.value = false
 }
@@ -199,15 +196,15 @@ function handleKeydown(e: KeyboardEvent) {
   <div class="space-y-2">
     <div class="flex items-center gap-2 relative">
       <div class="flex-1 flex items-center gap-1">
-        <input v-model="searchInput" type="text" placeholder="Search China place or OSM ID..." class="flex-1 px-2 py-1"
+        <input v-model="searchInput" type="text" placeholder="搜索中国地点或 OSM ID..." class="flex-1 px-2 py-1"
           @keydown="handleKeydown" :disabled="isSearching || isLoading" />
         <Tooltip>
-          Search a place in China (e.g., "Beijing") or a China OSM ID to import as polygon
+          搜索中国境内的地点（如「北京」）或中国 OSM ID 以导入为多边形
         </Tooltip>
       </div>
       <Button size="sm" variant="primary" :disabled="!searchInput.trim() || isSearching || isLoading"
         @click="handleSearch">
-        {{ isSearching ? 'Searching...' : 'Search' }}
+        {{ isSearching ? '搜索中...' : '搜索' }}
       </Button>
     </div>
 
@@ -232,7 +229,7 @@ function handleKeydown(e: KeyboardEvent) {
           <div v-if="!isLoading && !loadingSubdivisions && result.addresstype === 'country' && isChinaSearchResult(result)" class="flex-shrink-0">
             <Button size="sm" variant="primary" :disabled="isSearching || isLoading || loadingSubdivisions" 
               @click.stop="handleSearchSubdivisions(result)">
-              subdivisions
+              行政区划
             </Button>
           </div>
           <div v-if="(isLoading || loadingSubdivisions) && selectedResult?.osm_id === result.osm_id"
@@ -244,7 +241,7 @@ function handleKeydown(e: KeyboardEvent) {
     </div>
 
     <div v-if="showResults && !hasResults && !isSearching" class="text-xs px-2 py-2 geojson-empty">
-      No places found
+      未找到地点
     </div>
   </div>
 </template>

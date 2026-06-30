@@ -77,7 +77,7 @@ async function getFromBaidu(
         getTileUrl: () => '',
       },
       imageDate: date,
-      copyright: '© Baidu Maps',
+      copyright: '© 百度地图',
       time: [
         ...(result.TimeLine?.map((r: { ID: string }) => ({
           pano: r.ID,

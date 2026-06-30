@@ -1,5 +1,5 @@
 <template>
-  <Button size="sm" squared :disabled title="Export to JSON" @click="handleExport">
+  <Button size="sm" squared :disabled title="导出为 JSON" @click="handleExport">
     <FileExportIcon class="w-5 h-5" />
   </Button>
 </template>
@@ -36,9 +36,9 @@ function handleExport() {
   const name =
     props.data.length === 1 && props.data[0].feature.properties.name
       ? props.data[0].feature.properties.name
-      : 'Generated map'
+      : '生成的地图'
 
-  const fileName = `${name} (${data.length} locations).json`
+  const fileName = `${name}（${data.length} 个地点）.json`
 
   const linkElement = document.createElement('a')
   linkElement.href = dataUri
