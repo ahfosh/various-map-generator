@@ -9,7 +9,7 @@
       <h1
         class="logo px-2 py-0.5 flex gap-0.5 items-center justify-center text-xl tracking-tighter"
       >
-        百度地图
+        百度街景
         <Spinner icon="baidu" />生成器
       </h1>
     </div>
@@ -320,83 +320,83 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
         <Collapsible :is-open="panels.generatorSettings" class="settings-panel-content pr-1">
-            <div class="flex items-center justify-between">
-              全景 ID：
-              <select v-model="settings.panoId" class="w-24 ml-10">
-                <option value="enable">启用</option>
-                <option value="disable">禁用</option>
-                <option value="prefix">前缀</option>
-              </select>
+          <div class="flex items-center justify-between">
+            全景 ID：
+            <select v-model="settings.panoId" class="w-24 ml-10">
+              <option value="enable">启用</option>
+              <option value="disable">禁用</option>
+              <option value="prefix">前缀</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-between">
+            策略：
+            <select
+              v-model="settings.strategy"
+              class="w-24"
+              title="随机：在多边形内生成随机坐标。网格：使用搜索半径以网格方式系统性地覆盖多边形。"
+            >
+              <option value="random">随机</option>
+              <option value="grid">网格</option>
+            </select>
+          </div>
+
+          <div class="flex justify-between">
+            生成器数量：
+            <div class="flex items-center gap-4">
+              <input
+                type="number"
+                v-model.number="settings.numOfGenerators"
+                min="1"
+                max="10"
+                class="w-8 h-5 px-2 py-1 border rounded text-right"
+              />
+              <Slider
+                v-model="settings.numOfGenerators"
+                range="true"
+                :min="1"
+                :max="10"
+                :step="1"
+                :tooltips="false"
+                :lazy="false"
+                class="w-30 mr-2"
+              />
             </div>
+          </div>
 
-            <div class="flex items-center justify-between">
-              策略：
-              <select
-                v-model="settings.strategy"
-                class="w-24"
-                title="随机：在多边形内生成随机坐标。网格：使用搜索半径以网格方式系统性地覆盖多边形。"
-              >
-                <option value="random">随机</option>
-                <option value="grid">网格</option>
-              </select>
+          <div class="flex justify-between">
+            速度：
+            <span>
+              <input
+                type="number"
+                v-model.number="settings.speed"
+                min="1"
+                max="1000"
+                @input="handleSpeedInput"
+              />
+              次尝试
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            半径：
+            <span>
+              <input type="number" v-model.number="settings.radius" @change="handleRadiusInput" />
+              m
+            </span>
+          </div>
+
+          <Checkbox v-model="settings.oneCountryAtATime"> 每次只检查一个区域/多边形 </Checkbox>
+
+          <div>
+            <Checkbox v-model="settings.findRegions">地点之间的最小距离</Checkbox>
+            <div v-if="settings.findRegions" class="ml-6">
+              <input type="number" v-model.number="settings.regionRadius" /> <span> 公里 </span>
             </div>
+          </div>
 
-            <div class="flex justify-between">
-              生成器数量：
-              <div class="flex items-center gap-4">
-                <input
-                  type="number"
-                  v-model.number="settings.numOfGenerators"
-                  min="1"
-                  max="10"
-                  class="w-8 h-5 px-2 py-1 border rounded text-right"
-                />
-                <Slider
-                  v-model="settings.numOfGenerators"
-                  range="true"
-                  :min="1"
-                  :max="10"
-                  :step="1"
-                  :tooltips="false"
-                  :lazy="false"
-                  class="w-30 mr-2"
-                />
-              </div>
-            </div>
-
-            <div class="flex justify-between">
-              速度：
-              <span>
-                <input
-                  type="number"
-                  v-model.number="settings.speed"
-                  min="1"
-                  max="1000"
-                  @input="handleSpeedInput"
-                />
-                次尝试
-              </span>
-            </div>
-
-            <div class="flex items-center justify-between">
-              半径：
-              <span>
-                <input type="number" v-model.number="settings.radius" @change="handleRadiusInput" />
-                m
-              </span>
-            </div>
-
-            <Checkbox v-model="settings.oneCountryAtATime"> 每次只检查一个区域/多边形 </Checkbox>
-
-            <div>
-              <Checkbox v-model="settings.findRegions">地点之间的最小距离</Checkbox>
-              <div v-if="settings.findRegions" class="ml-6">
-                <input type="number" v-model.number="settings.regionRadius" /> <span> 公里 </span>
-              </div>
-            </div>
-
-            <Checkbox v-model="settings.tag"> 为地点启用自动标签 </Checkbox>
-          </Collapsible>
+          <Checkbox v-model="settings.tag"> 为地点启用自动标签 </Checkbox>
+        </Collapsible>
       </div>
 
       <div v-if="!state.started" class="settings-panel">
@@ -408,134 +408,129 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
         <Collapsible :is-open="panels.coverageSettings" class="settings-panel-content">
-            <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
+          <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
 
-            <Checkbox v-model="settings.rejectNoDescription"> 拒绝无描述的地点 </Checkbox>
-            <Checkbox v-model="settings.rejectRoadName"> 拒绝有道路名称的地点 </Checkbox>
+          <Checkbox v-model="settings.rejectNoDescription"> 拒绝无描述的地点 </Checkbox>
+          <Checkbox v-model="settings.rejectRoadName"> 拒绝有道路名称的地点 </Checkbox>
 
-            <Checkbox
-              v-model="settings.onlyOneInTimeframe"
-              title="仅允许在时间范围内附近没有其他覆盖的地点。"
-            >
-              每个位置仅一个全景图
-            </Checkbox>
+          <Checkbox
+            v-model="settings.onlyOneInTimeframe"
+            title="仅允许在时间范围内附近没有其他覆盖的地点。"
+          >
+            每个位置仅一个全景图
+          </Checkbox>
 
-            <Checkbox v-model="settings.checkLinks">检查链接的全景图</Checkbox>
-            <div v-if="settings.checkLinks" class="flex items-center justify-between ml-6">
-              深度：
-              <div class="flex items-center gap-2">
-                {{ settings.linksDepth }}
-                <input type="range" v-model.number="settings.linksDepth" min="1" max="10" />
+          <Checkbox v-model="settings.checkLinks">检查链接的全景图</Checkbox>
+          <div v-if="settings.checkLinks" class="flex items-center justify-between ml-6">
+            深度：
+            <div class="flex items-center gap-2">
+              {{ settings.linksDepth }}
+              <input type="range" v-model.number="settings.linksDepth" min="1" max="10" />
+            </div>
+          </div>
+
+          <div v-if="!settings.selectMonths" class="flex flex-col gap-0.5">
+            <div class="flex justify-between">
+              起始：
+              <input :type="'month'" v-model="settings.fromDate" min="2007-01" :max="currentDate" />
+            </div>
+            <div class="flex justify-between">
+              截止：
+              <input :type="'month'" v-model="settings.toDate" min="2007-01" :max="currentDate" />
+            </div>
+          </div>
+
+          <div>
+            <Checkbox v-model="settings.selectMonths">按月份筛选</Checkbox>
+            <div v-if="settings.selectMonths" class="flex flex-col gap-0.5 ml-6">
+              <div>
+                从
+                <select v-model="settings.fromMonth">
+                  <option value="01">一月</option>
+                  <option value="02">二月</option>
+                  <option value="03">三月</option>
+                  <option value="04">四月</option>
+                  <option value="05">五月</option>
+                  <option value="06">六月</option>
+                  <option value="07">七月</option>
+                  <option value="08">八月</option>
+                  <option value="09">九月</option>
+                  <option value="10">十月</option>
+                  <option value="11">十一月</option>
+                  <option value="12">十二月</option>
+                </select>
+                到
+                <select v-model="settings.toMonth">
+                  <option value="01">一月</option>
+                  <option value="02">二月</option>
+                  <option value="03">三月</option>
+                  <option value="04">四月</option>
+                  <option value="05">五月</option>
+                  <option value="06">六月</option>
+                  <option value="07">七月</option>
+                  <option value="08">八月</option>
+                  <option value="09">九月</option>
+                  <option value="10">十月</option>
+                  <option value="11">十一月</option>
+                  <option value="12">十二月</option>
+                </select>
+              </div>
+              <div>
+                介于
+                <input type="number" v-model.number="settings.fromYear" min="2007" />
+                和
+                <input type="number" v-model.number="settings.toYear" min="2007" />
               </div>
             </div>
+          </div>
 
-            <div v-if="!settings.selectMonths" class="flex flex-col gap-0.5">
-              <div class="flex justify-between">
-                起始：
-                <input
-                  :type="'month'"
-                  v-model="settings.fromDate"
-                  min="2007-01"
-                  :max="currentDate"
-                />
-              </div>
-              <div class="flex justify-between">
-                截止：
-                <input :type="'month'" v-model="settings.toDate" min="2007-01" :max="currentDate" />
-              </div>
-            </div>
-
-            <div>
-              <Checkbox v-model="settings.selectMonths">按月份筛选</Checkbox>
-              <div v-if="settings.selectMonths" class="flex flex-col gap-0.5 ml-6">
-                <div>
-                  从
-                  <select v-model="settings.fromMonth">
-                    <option value="01">一月</option>
-                    <option value="02">二月</option>
-                    <option value="03">三月</option>
-                    <option value="04">四月</option>
-                    <option value="05">五月</option>
-                    <option value="06">六月</option>
-                    <option value="07">七月</option>
-                    <option value="08">八月</option>
-                    <option value="09">九月</option>
-                    <option value="10">十月</option>
-                    <option value="11">十一月</option>
-                    <option value="12">十二月</option>
-                  </select>
-                  到
-                  <select v-model="settings.toMonth">
-                    <option value="01">一月</option>
-                    <option value="02">二月</option>
-                    <option value="03">三月</option>
-                    <option value="04">四月</option>
-                    <option value="05">五月</option>
-                    <option value="06">六月</option>
-                    <option value="07">七月</option>
-                    <option value="08">八月</option>
-                    <option value="09">九月</option>
-                    <option value="10">十月</option>
-                    <option value="11">十一月</option>
-                    <option value="12">十二月</option>
-                  </select>
-                </div>
-                <div>
-                  介于
-                  <input type="number" v-model.number="settings.fromYear" min="2007" />
-                  和
-                  <input type="number" v-model.number="settings.toYear" min="2007" />
-                </div>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <Checkbox v-model="settings.filterByMinutes.enabled">按分钟筛选</Checkbox>
-              <Slider
-                v-if="settings.filterByMinutes.enabled"
-                v-model="settings.filterByMinutes.range"
-                :min="0"
-                :max="1439"
-                :step="5"
-                :showTooltip="'focus'"
-                :range="true"
-                class="w-full max-w-48"
-                :format="
-                  (val) => {
-                    const h = Math.floor(val / 60)
-                      .toString()
-                      .padStart(2, '0');
-                    const m = Math.floor(val % 60)
-                      .toString()
-                      .padStart(2, '0');
-                    return `${h}:${m}`;
-                  }
-                "
-              />
-              <span v-if="settings.filterByMinutes.enabled" class="ml-2">
-                {{
-                  Math.floor(settings.filterByMinutes.range[0] / 60)
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Checkbox v-model="settings.filterByMinutes.enabled">按分钟筛选</Checkbox>
+            <Slider
+              v-if="settings.filterByMinutes.enabled"
+              v-model="settings.filterByMinutes.range"
+              :min="0"
+              :max="1439"
+              :step="5"
+              :showTooltip="'focus'"
+              :range="true"
+              class="w-full max-w-48"
+              :format="
+                (val) => {
+                  const h = Math.floor(val / 60)
                     .toString()
-                    .padStart(2, '0')
-                }}:{{ (settings.filterByMinutes.range[0] % 60).toString().padStart(2, '0') }}
-                -
-                {{
-                  Math.floor(settings.filterByMinutes.range[1] / 60)
+                    .padStart(2, '0');
+                  const m = Math.floor(val % 60)
                     .toString()
-                    .padStart(2, '0')
-                }}:{{ (settings.filterByMinutes.range[1] % 60).toString().padStart(2, '0') }}
-              </span>
-            </div>
+                    .padStart(2, '0');
+                  return `${h}:${m}`;
+                }
+              "
+            />
+            <span v-if="settings.filterByMinutes.enabled" class="ml-2">
+              {{
+                Math.floor(settings.filterByMinutes.range[0] / 60)
+                  .toString()
+                  .padStart(2, '0')
+              }}:{{ (settings.filterByMinutes.range[0] % 60).toString().padStart(2, '0') }}
+              -
+              {{
+                Math.floor(settings.filterByMinutes.range[1] / 60)
+                  .toString()
+                  .padStart(2, '0')
+              }}:{{ (settings.filterByMinutes.range[1] % 60).toString().padStart(2, '0') }}
+            </span>
+          </div>
 
-            <Checkbox
-              v-model="settings.checkAllDates"
-              title="检查某地点的所有日期/全景图，而非仅默认的一个。对于已有覆盖的国家尤其有用，新日期可能尚未成为默认。生成已有覆盖的国家时可能会略微降低速度。"
-            >
-              检查所有日期</Checkbox
-            >
+          <Checkbox
+            v-model="settings.checkAllDates"
+            title="检查某地点的所有日期/全景图，而非仅默认的一个。对于已有覆盖的国家尤其有用，新日期可能尚未成为默认。生成已有覆盖的国家时可能会略微降低速度。"
+          >
+            检查所有日期</Checkbox
+          >
 
-            <Checkbox v-model="settings.randomInTimeline"> 在时间范围内随机选择日期 </Checkbox>
-          </Collapsible>
+          <Checkbox v-model="settings.randomInTimeline"> 在时间范围内随机选择日期 </Checkbox>
+        </Collapsible>
       </div>
 
       <div v-if="!state.started" class="settings-panel settings">
@@ -548,226 +543,226 @@
         </div>
 
         <Collapsible :is-open="panels.mapMakingSettings" class="settings-panel-content">
-            <div class="flex items-center gap-1 relative">
-              <Checkbox v-model="settings.searchInDescription.enabled">在全景描述中搜索 </Checkbox>
-              <Tooltip>
-                描述通常基于您的语言区域。<br />
-                您可以输入多个以逗号分隔的搜索词。
-              </Tooltip>
+          <div class="flex items-center gap-1 relative">
+            <Checkbox v-model="settings.searchInDescription.enabled">在全景描述中搜索 </Checkbox>
+            <Tooltip>
+              描述通常基于您的语言区域。<br />
+              您可以输入多个以逗号分隔的搜索词。
+            </Tooltip>
+          </div>
+
+          <div v-if="settings.searchInDescription.enabled" class="space-y-0.5 ml-6 py-1">
+            <div class="flex justify-between items-center gap-1">
+              <select v-model="settings.searchInDescription.filterType">
+                <option value="include">包含</option>
+                <option value="exclude">排除</option>
+              </select>
+              <input
+                type="text"
+                v-model.trim="settings.searchInDescription.searchTerms"
+                class="w-full"
+              />
             </div>
 
-            <div v-if="settings.searchInDescription.enabled" class="space-y-0.5 ml-6 py-1">
-              <div class="flex justify-between items-center gap-1">
-                <select v-model="settings.searchInDescription.filterType">
-                  <option value="include">包含</option>
-                  <option value="exclude">排除</option>
-                </select>
-                <input
-                  type="text"
-                  v-model.trim="settings.searchInDescription.searchTerms"
-                  class="w-full"
+            <div class="flex justify-between items-center gap-2">
+              <div class="flex items-center gap-1 relative">
+                搜索模式
+                <Tooltip>
+                  <strong>搜索模式：</strong><br />
+                  • <strong>包含</strong>：文本中任意位置<br />
+                  • <strong>全词</strong>：精确匹配单词<br />
+                  • <strong>分段匹配</strong>：精确匹配逗号分隔的段落<br />
+                  （例如：901 N Main Ave, <strong>Springfield</strong>, Missouri）<br />
+                  • <strong>开头匹配</strong>：单词开头<br />
+                  • <strong>结尾匹配</strong>：单词结尾<br />
+                </Tooltip>
+              </div>
+              <select v-model="settings.searchInDescription.searchMode">
+                <option value="contains">包含</option>
+                <option value="fullword">全词</option>
+                <option value="sectionmatch">分段匹配</option>
+                <option value="startswith">开头匹配</option>
+                <option value="endswith">结尾匹配</option>
+              </select>
+            </div>
+          </div>
+
+          <Checkbox v-model="settings.findByTileColor.enabled">按瓦片颜色查找</Checkbox>
+          <div v-if="settings.findByTileColor.enabled" class="space-y-0.5 ml-6 pb-1">
+            <div class="flex justify-between items-center gap-2">
+              包含/排除：
+              <select v-model="settings.findByTileColor.filterType">
+                <option value="include">包含</option>
+                <option value="exclude">排除</option>
+              </select>
+            </div>
+            <div class="flex justify-between items-center gap-2">
+              瓦片提供方：
+              <select v-model="settings.findByTileColor.tileProvider">
+                <option value="gmaps">谷歌地图</option>
+                <option value="osm">OSM</option>
+              </select>
+            </div>
+
+            <div class="flex justify-between items-center gap-2">
+              瓦片缩放级别：
+              <span class="ml-auto">
+                {{ settings.findByTileColor.zoom }}
+              </span>
+              <input
+                type="range"
+                v-model.number="settings.findByTileColor.zoom"
+                min="13"
+                max="19"
+                step="1"
+                title="瓦片缩放级别"
+              />
+            </div>
+
+            <div class="flex justify-between items-center gap-2">
+              运算符：
+              <select v-model="settings.findByTileColor.operator">
+                <option value="OR">OR</option>
+                <option value="AND">AND</option>
+              </select>
+            </div>
+
+            <div
+              v-for="(tileColor, index) in settings.findByTileColor.tileColors[
+                settings.findByTileColor.tileProvider
+              ]"
+              :key="index"
+              :title="tileColor.label"
+              class="flex items-center gap-2"
+            >
+              <Checkbox v-model="tileColor.active" class="hover:brightness-100! truncate">
+                <span
+                  class="h-4 min-w-8"
+                  :style="{ backgroundColor: 'rgb(' + tileColor.colors[0] + ')' }"
                 />
-              </div>
-
-              <div class="flex justify-between items-center gap-2">
-                <div class="flex items-center gap-1 relative">
-                  搜索模式
-                  <Tooltip>
-                    <strong>搜索模式：</strong><br />
-                    • <strong>包含</strong>：文本中任意位置<br />
-                    • <strong>全词</strong>：精确匹配单词<br />
-                    • <strong>分段匹配</strong>：精确匹配逗号分隔的段落<br />
-                    （例如：901 N Main Ave, <strong>Springfield</strong>, Missouri）<br />
-                    • <strong>开头匹配</strong>：单词开头<br />
-                    • <strong>结尾匹配</strong>：单词结尾<br />
-                  </Tooltip>
-                </div>
-                <select v-model="settings.searchInDescription.searchMode">
-                  <option value="contains">包含</option>
-                  <option value="fullword">全词</option>
-                  <option value="sectionmatch">分段匹配</option>
-                  <option value="startswith">开头匹配</option>
-                  <option value="endswith">结尾匹配</option>
-                </select>
-              </div>
-            </div>
-
-            <Checkbox v-model="settings.findByTileColor.enabled">按瓦片颜色查找</Checkbox>
-            <div v-if="settings.findByTileColor.enabled" class="space-y-0.5 ml-6 pb-1">
-              <div class="flex justify-between items-center gap-2">
-                包含/排除：
-                <select v-model="settings.findByTileColor.filterType">
-                  <option value="include">包含</option>
-                  <option value="exclude">排除</option>
-                </select>
-              </div>
-              <div class="flex justify-between items-center gap-2">
-                瓦片提供方：
-                <select v-model="settings.findByTileColor.tileProvider">
-                  <option value="gmaps">谷歌地图</option>
-                  <option value="osm">OSM</option>
-                </select>
-              </div>
-
-              <div class="flex justify-between items-center gap-2">
-                瓦片缩放级别：
-                <span class="ml-auto">
-                  {{ settings.findByTileColor.zoom }}
-                </span>
+                <span class="truncate">{{ tileColor.label }}</span>
+              </Checkbox>
+              <div v-if="tileColor.threshold >= 0.01" class="flex items-center gap-2 ml-auto">
+                <span>{{ (tileColor.threshold * 100).toFixed(0) }}%</span>
                 <input
                   type="range"
-                  v-model.number="settings.findByTileColor.zoom"
-                  min="13"
-                  max="19"
-                  step="1"
-                  title="瓦片缩放级别"
+                  v-model.number="tileColor.threshold"
+                  min="0.01"
+                  max="1"
+                  step="0.01"
+                  title="颜色占比阈值"
                 />
               </div>
+            </div>
+          </div>
 
-              <div class="flex justify-between items-center gap-2">
-                运算符：
-                <select v-model="settings.findByTileColor.operator">
-                  <option value="OR">OR</option>
-                  <option value="AND">AND</option>
-                </select>
+          <Checkbox v-model="settings.filterByLinksLength.enabled"> 按链接数量筛选 </Checkbox>
+          <div v-if="settings.filterByLinksLength.enabled" class="ml-6">
+            <label class="flex items-center justify-between">
+              <div class="flex items-center gap-1 relative">
+                范围
+                <Tooltip>
+                  0：球形全景/孤立点<br />
+                  1：一个箭头（死胡同）<br />
+                  &gt; 2：交叉路口
+                </Tooltip>
               </div>
-
-              <div
-                v-for="(tileColor, index) in settings.findByTileColor.tileColors[
-                  settings.findByTileColor.tileProvider
-                ]"
-                :key="index"
-                :title="tileColor.label"
-                class="flex items-center gap-2"
-              >
-                <Checkbox v-model="tileColor.active" class="hover:brightness-100! truncate">
-                  <span
-                    class="h-4 min-w-8"
-                    :style="{ backgroundColor: 'rgb(' + tileColor.colors[0] + ')' }"
-                  />
-                  <span class="truncate">{{ tileColor.label }}</span>
-                </Checkbox>
-                <div v-if="tileColor.threshold >= 0.01" class="flex items-center gap-2 ml-auto">
-                  <span>{{ (tileColor.threshold * 100).toFixed(0) }}%</span>
-                  <input
-                    type="range"
-                    v-model.number="tileColor.threshold"
-                    min="0.01"
-                    max="1"
-                    step="0.01"
-                    title="颜色占比阈值"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Checkbox v-model="settings.filterByLinksLength.enabled"> 按链接数量筛选 </Checkbox>
-            <div v-if="settings.filterByLinksLength.enabled" class="ml-6">
-              <label class="flex items-center justify-between">
-                <div class="flex items-center gap-1 relative">
-                  范围
-                  <Tooltip>
-                    0：球形全景/孤立点<br />
-                    1：一个箭头（死胡同）<br />
-                    &gt; 2：交叉路口
-                  </Tooltip>
-                </div>
-                <Slider
-                  v-model="settings.filterByLinksLength.range"
-                  :min="0"
-                  :max="5"
-                  tooltipPosition="bottom"
-                  class="w-32 pr-2"
-                />
-              </label>
-            </div>
-
-            <Checkbox v-model="settings.filterByAltitude.enabled"> 按海拔筛选</Checkbox>
-            <div v-if="settings.filterByAltitude.enabled" class="ml-6">
-              <label class="flex items-center justify-between">
-                <div class="flex items-center gap-1 relative">米</div>
-                <Slider
-                  v-if="settings.filterByAltitude.enabled"
-                  v-model="settings.filterByAltitude.range"
-                  :min="-200"
-                  :max="8848"
-                  :step="10"
-                  :showTooltip="'always'"
-                  :range="true"
-                  :format="(val) => `${Math.round(val)}m`"
-                  tooltipPosition="bottom"
-                  class="w-40 pr-2"
-                />
-              </label>
-            </div>
-
-            <Checkbox v-model="settings.getCurve"> 查找弯道地点 </Checkbox>
-
-            <label v-if="settings.getCurve" class="ml-6 flex items-center justify-between">
-              最小弯道角度（{{ settings.minCurveAngle }}°）
-              <input type="range" v-model.number="settings.minCurveAngle" min="5" max="90" />
-            </label>
-
-            <Checkbox v-model="settings.heading.adjust">设置朝向</Checkbox>
-            <div v-if="settings.heading.adjust" class="ml-6">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" v-model="settings.heading.reference" value="link" />
-                沿道路方向
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" v-model="settings.heading.reference" value="forward" />
-                朝向车头
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" v-model="settings.heading.reference" value="backward" />
-                朝向车尾
-              </label>
-              <label class="flex items-center justify-between">
-                偏差
-                <Slider
-                  v-model="settings.heading.range"
-                  :min="-180"
-                  :max="180"
-                  tooltipPosition="bottom"
-                  class="w-32 pr-2"
-                />
-              </label>
-              <small>0° 将直接指向道路方向。</small>
-              <Checkbox v-model="settings.heading.randomInRange">范围内随机</Checkbox>
-            </div>
-
-            <div class="flex items-center justify-between">
-              <Checkbox v-model="settings.pitch.adjust">设置俯仰角</Checkbox>
               <Slider
-                v-if="settings.pitch.adjust"
-                v-model="settings.pitch.range"
-                :min="-90"
-                :max="90"
-                tooltipPosition="bottom"
-                class="w-32 pr-2"
-              />
-            </div>
-            <div v-if="settings.pitch.adjust" class="ml-6">
-              <small>默认 0°。-90° 指向地面，+90° 指向天空</small>
-              <Checkbox v-model="settings.pitch.randomInRange">范围内随机</Checkbox>
-            </div>
-
-            <div class="flex items-center justify-between">
-              <Checkbox v-model="settings.zoom.adjust">设置缩放</Checkbox>
-              <Slider
-                v-if="settings.zoom.adjust"
-                v-model="settings.zoom.range"
+                v-model="settings.filterByLinksLength.range"
                 :min="0"
-                :max="4"
-                :step="-1"
+                :max="5"
                 tooltipPosition="bottom"
                 class="w-32 pr-2"
               />
-            </div>
-            <Checkbox v-if="settings.zoom.adjust" v-model="settings.zoom.randomInRange" class="ml-6"
-              >范围内随机
-            </Checkbox>
-          </Collapsible>
+            </label>
+          </div>
+
+          <Checkbox v-model="settings.filterByAltitude.enabled"> 按海拔筛选</Checkbox>
+          <div v-if="settings.filterByAltitude.enabled" class="ml-6">
+            <label class="flex items-center justify-between">
+              <div class="flex items-center gap-1 relative">米</div>
+              <Slider
+                v-if="settings.filterByAltitude.enabled"
+                v-model="settings.filterByAltitude.range"
+                :min="-200"
+                :max="8848"
+                :step="10"
+                :showTooltip="'always'"
+                :range="true"
+                :format="(val) => `${Math.round(val)}m`"
+                tooltipPosition="bottom"
+                class="w-40 pr-2"
+              />
+            </label>
+          </div>
+
+          <Checkbox v-model="settings.getCurve"> 查找弯道地点 </Checkbox>
+
+          <label v-if="settings.getCurve" class="ml-6 flex items-center justify-between">
+            最小弯道角度（{{ settings.minCurveAngle }}°）
+            <input type="range" v-model.number="settings.minCurveAngle" min="5" max="90" />
+          </label>
+
+          <Checkbox v-model="settings.heading.adjust">设置朝向</Checkbox>
+          <div v-if="settings.heading.adjust" class="ml-6">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" v-model="settings.heading.reference" value="link" />
+              沿道路方向
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" v-model="settings.heading.reference" value="forward" />
+              朝向车头
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" v-model="settings.heading.reference" value="backward" />
+              朝向车尾
+            </label>
+            <label class="flex items-center justify-between">
+              偏差
+              <Slider
+                v-model="settings.heading.range"
+                :min="-180"
+                :max="180"
+                tooltipPosition="bottom"
+                class="w-32 pr-2"
+              />
+            </label>
+            <small>0° 将直接指向道路方向。</small>
+            <Checkbox v-model="settings.heading.randomInRange">范围内随机</Checkbox>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <Checkbox v-model="settings.pitch.adjust">设置俯仰角</Checkbox>
+            <Slider
+              v-if="settings.pitch.adjust"
+              v-model="settings.pitch.range"
+              :min="-90"
+              :max="90"
+              tooltipPosition="bottom"
+              class="w-32 pr-2"
+            />
+          </div>
+          <div v-if="settings.pitch.adjust" class="ml-6">
+            <small>默认 0°。-90° 指向地面，+90° 指向天空</small>
+            <Checkbox v-model="settings.pitch.randomInRange">范围内随机</Checkbox>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <Checkbox v-model="settings.zoom.adjust">设置缩放</Checkbox>
+            <Slider
+              v-if="settings.zoom.adjust"
+              v-model="settings.zoom.range"
+              :min="0"
+              :max="4"
+              :step="-1"
+              tooltipPosition="bottom"
+              class="w-32 pr-2"
+            />
+          </div>
+          <Checkbox v-if="settings.zoom.adjust" v-model="settings.zoom.randomInRange" class="ml-6"
+            >范围内随机
+          </Checkbox>
+        </Collapsible>
       </div>
 
       <div class="settings-panel">
@@ -776,43 +771,40 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
         <Collapsible :is-open="panels.marker" class="settings-panel-content">
-            <Checkbox
-              v-model="settings.markers.newRoad"
-              v-on:change="updateMarkerLayers('newRoad')"
-            >
-              <span class="h-3 w-3 bg-[#CA283F] rounded-full"></span>新路
-            </Checkbox>
-            <Checkbox v-model="settings.markers.gen4" @change="updateMarkerLayers('gen4')">
-              <span class="h-3 w-3 bg-[#2880CA] rounded-full"></span>更新
-            </Checkbox>
-            <Checkbox
-              v-model="settings.markers.cluster"
-              v-on:change="handleClusterToggle"
-              :disabled="settings.markers.glify"
-              title="用于减少卡顿。高性能模式开启时禁用。"
-            >
-              <span class="marker-swatch marker-swatch-cluster"></span>
-              聚合标记
-            </Checkbox>
-            <Checkbox
-              v-model="settings.markers.glify"
-              v-on:change="handleGlifyToggle"
-              title="使用 WebGL 渲染大量点位。点位较多时可能卡顿，低配设备建议关闭并改用聚合标记。"
-            >
-              <span class="marker-swatch marker-swatch-glify"></span>
-              高性能
-            </Checkbox>
-            <Button
-              :disabled="!totalLocs"
-              size="sm"
-              variant="warning"
-              class="mt-2 w-full justify-center flex items-center gap-1"
-              title="清除标记（为提升性能，不会删除已生成的地点）"
-              @click="clearMarkers"
-            >
-              <MarkerIcon class="w-5 h-5" />清除
-            </Button>
-          </Collapsible>
+          <Checkbox v-model="settings.markers.newRoad" v-on:change="updateMarkerLayers('newRoad')">
+            <span class="h-3 w-3 bg-[#CA283F] rounded-full"></span>新路
+          </Checkbox>
+          <Checkbox v-model="settings.markers.gen4" @change="updateMarkerLayers('gen4')">
+            <span class="h-3 w-3 bg-[#2880CA] rounded-full"></span>更新
+          </Checkbox>
+          <Checkbox
+            v-model="settings.markers.cluster"
+            v-on:change="handleClusterToggle"
+            :disabled="settings.markers.glify"
+            title="用于减少卡顿。高性能模式开启时禁用。"
+          >
+            <span class="marker-swatch marker-swatch-cluster"></span>
+            聚合标记
+          </Checkbox>
+          <Checkbox
+            v-model="settings.markers.glify"
+            v-on:change="handleGlifyToggle"
+            title="使用 WebGL 渲染大量点位。点位较多时可能卡顿，低配设备建议关闭并改用聚合标记。"
+          >
+            <span class="marker-swatch marker-swatch-glify"></span>
+            高性能
+          </Checkbox>
+          <Button
+            :disabled="!totalLocs"
+            size="sm"
+            variant="warning"
+            class="mt-2 w-full justify-center flex items-center gap-1"
+            title="清除标记（为提升性能，不会删除已生成的地点）"
+            @click="clearMarkers"
+          >
+            <MarkerIcon class="w-5 h-5" />清除
+          </Button>
+        </Collapsible>
       </div>
 
       <Button
