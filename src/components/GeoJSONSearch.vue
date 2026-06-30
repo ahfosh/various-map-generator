@@ -6,9 +6,10 @@ import {
   downloadSubdivisions,
   getAddressFromOSMID,
   isChinaSearchResult,
+  normalizeSearchResultCountry,
   type SearchResult,
 } from '@/composables/geojsonSearch'
-import { normalizeChinaCountryCode } from '@/constants'
+import { getFlagCountryCode } from '@/constants'
 import Button from '@/components/Elements/Button.vue'
 import Tooltip from '@/components/Elements/Tooltip.vue'
 
@@ -31,13 +32,7 @@ const hasResults = computed(() => searchResults.value.length > 0)
 function getAddressInfo(result: SearchResult): string {
   const parts: string[] = []
 
-  if (result.address?.country_code) {
-    const normalized = normalizeChinaCountryCode(result.address.country_code)
-    if (normalized) {
-      result.address.country_code = normalized
-      result.address.country = '中国'
-    }
-  }
+  normalizeSearchResultCountry(result)
   if (result.address) {
     const { city, state, region, country, province } = result.address
     if (city) parts.push(city)
@@ -70,6 +65,7 @@ async function handleSearch() {
       const osmId = Number(trimmedInput)
       const addressInfo = await getAddressFromOSMID(osmId)
       const geojson = await downloadGeoJSON(osmId)
+      if (addressInfo) normalizeSearchResultCountry(addressInfo)
       if (addressInfo && !isChinaSearchResult(addressInfo)) {
         error.value = '仅支持中国（CN）境内的地点。'
         isLoading.value = false
@@ -106,7 +102,7 @@ async function handleSearch() {
       isSearching.value = false
       return
     }
-    searchResults.value = chinaResults
+    searchResults.value = chinaResults.map(normalizeSearchResultCountry)
     showResults.value = true
   } else {
     error.value = '未找到结果'
@@ -117,6 +113,7 @@ async function handleSearch() {
 }
 
 async function handleSearchSubdivisions(result: SearchResult) {
+  normalizeSearchResultCountry(result)
   if (!isChinaSearchResult(result)) {
     error.value = '仅支持中国（CN）的行政区划。'
     return
@@ -133,7 +130,7 @@ async function handleSearchSubdivisions(result: SearchResult) {
   try {
     const subdivisions = await downloadSubdivisions(result.address.country_code)
     if (subdivisions && subdivisions.features.length > 0) {
-      const countryName = result.address.country || result.display_name.split(',')[0].trim()
+      const countryName = result.address.country || '中国'
       const countryCode = result.address.country_code
       emit('importSubdivisions', subdivisions, countryName, countryCode)
       resetSearch()
@@ -149,6 +146,7 @@ async function handleSearchSubdivisions(result: SearchResult) {
 }
 
 async function handleSelect(result: SearchResult) {
+  normalizeSearchResultCountry(result)
   if (!isChinaSearchResult(result)) {
     error.value = '仅支持中国（CN）境内的地点。'
     return
@@ -217,7 +215,7 @@ function handleKeydown(e: KeyboardEvent) {
         class="px-2 py-1.5 cursor-pointer transition-colors geojson-result-item"
         :class="{ 'geojson-result-selected': selectedResult?.osm_id === result.osm_id }" @click="handleSelect(result)">
         <div class="flex items-center gap-1.5">
-          <span :class="`flag-icon flag-` + (result.address?.country_code || '🌍').toLowerCase()"></span>
+          <span :class="`flag-icon flag-` + getFlagCountryCode(result.address?.country_code)"></span>
           <div class="flex-1 min-w-0">
             <div class="text-xs font-semibold text-primary truncate">
               {{ result.display_name.split(',')[0] }}

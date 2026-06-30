@@ -3,6 +3,7 @@ import type {
   StreetViewLocation,
   StreetViewPanoramaData,
 } from '@/streetview-types'
+import { normalizeChinaCountryCode } from '@/constants'
 
 export const MONTHS_NAME = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
@@ -10,6 +11,9 @@ export function getCountryName(countryCode: string, locale: string = 'zh'): stri
   try {
     if (!countryCode) {
       return '未知'
+    }
+    if (normalizeChinaCountryCode(countryCode)) {
+      return '中国'
     }
     const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
     return displayNames.of(countryCode.toUpperCase()) || countryCode;
@@ -45,7 +49,7 @@ async function createDiscordMessage(title: string, pano: {
   else if (pano.road) position_word = '在'
   const link = `https://map.baidu.com/?newmap=1&shareurl=1&panotype=street&l=21&tn=B_NORMAL_MAP&sc=0&panoid=${pano.panoId}&pid=${pano.panoId}`;
   const countryName = getCountryName(pano.country || '');
-  const countryCode = pano.country ? pano.country.toLowerCase() : 'xx';
+  const countryCode = normalizeChinaCountryCode(pano.country) ?? (pano.country ? pano.country.toLowerCase() : 'xx');
   return `:white_check_mark: ${title}\n\n:flag_${countryCode}:${pano.update_type ? ` :${pano.update_type}: ` : ' '}${MONTHS_NAME[parseInt(pano.imageDate.slice(5, 7)) - 1]} ${pano.imageDate.slice(0, 4)} ${position_word} ${pano.locality || pano.road || ''}${(pano.locality || pano.road) ? ', ' : ''}${pano.region || ''}, ${countryName}\n<${link}>`;
 }
 

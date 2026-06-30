@@ -27,9 +27,20 @@ export function isChinaSearchResult(result: SearchResult): boolean {
   return normalizeChinaCountryCode(result.address?.country_code) === 'cn'
 }
 
+export function normalizeSearchResultCountry(result: SearchResult): SearchResult {
+  if (result.address?.country_code) {
+    const normalized = normalizeChinaCountryCode(result.address.country_code)
+    if (normalized) {
+      result.address.country_code = normalized
+      result.address.country = '中国'
+    }
+  }
+  return result
+}
+
 export async function getOSMID(placeName: string): Promise<SearchResult[] | null> {
   try {
-    const nominatimURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&addressdetails=1&limit=5&countrycodes=cn`
+    const nominatimURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}&addressdetails=1&limit=5&countrycodes=cn,hk,mo`
     const response = await fetch(nominatimURL, {
       headers: {
         'Accept-Language': 'zh-CN,zh;q=0.9'

@@ -234,7 +234,7 @@
             </Button>
             <span
               v-if="polygon.feature.properties.code"
-              :class="`flag-icon flag-` + polygon.feature.properties.code.toLowerCase()"
+              :class="`flag-icon flag-` + getFlagCountryCode(polygon.feature.properties.code)"
             ></span>
             <label class="polygon-name" @click="changePolygonName(polygon.feature.properties)">
               {{ getPolygonName(polygon.feature.properties) }}
@@ -919,7 +919,7 @@ import {
 } from '@/composables/utils.ts';
 import StreetViewProviders from '@/providers';
 import { generationConcurrency } from '@/concurrency';
-import { isInChina } from '@/constants';
+import { getFlagCountryCode, isChinaCountryCode, isInChina } from '@/constants';
 import {
   StreetViewStatus,
   type StreetViewLocationRequest,
@@ -1924,13 +1924,14 @@ async function handleImportSubdivisions(
   countryName: string,
   countryCode: string,
 ) {
-  if (countryCode.toLowerCase() !== 'cn') {
+  const normalizedCode = getFlagCountryCode(countryCode);
+  if (!isChinaCountryCode(countryCode)) {
     alert('仅支持中国（CN）的行政区划。');
     return;
   }
 
   try {
-    const layerKey = `subdivisions_${countryCode.toLowerCase()}`;
+    const layerKey = `subdivisions_${normalizedCode}`;
     const layerLabel = `${countryName}`;
 
     // Add to availableLayers if not already present

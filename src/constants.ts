@@ -14,7 +14,7 @@ export const CHINA_BBOX = {
   north: 55.8271,
 } as const
 
-export const CHINA_COUNTRY_CODES = new Set(['cn', 'tw', 'hk', 'mo'])
+export const CHINA_COUNTRY_CODES = new Set(['cn', 'hk', 'mo'])
 
 export const countryCodeMap: Record<string, string> = {
   cn: 'CHN',
@@ -34,4 +34,13 @@ export function normalizeChinaCountryCode(code?: string): string | null {
   const lower = code.toLowerCase()
   if (CHINA_COUNTRY_CODES.has(lower)) return 'cn'
   return null
+}
+
+/** ISO alpha-2 code for flag/UI display; HK/MO use CN resources */
+export function getFlagCountryCode(code?: string): string {
+  return normalizeChinaCountryCode(code) ?? code?.toLowerCase() ?? 'xx'
+}
+
+export function isChinaCountryCode(code?: string): boolean {
+  return normalizeChinaCountryCode(code) === 'cn'
 }

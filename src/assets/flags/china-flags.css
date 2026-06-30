@@ -17,14 +17,7 @@
   background-image: url(CN.svg);
 }
 
-.flag-tw {
-  background-image: url(TW.svg);
-}
-
-.flag-hk {
-  background-image: url(HK.svg);
-}
-
+.flag-hk,
 .flag-mo {
-  background-image: url(MO.svg);
+  background-image: url(CN.svg);
 }
