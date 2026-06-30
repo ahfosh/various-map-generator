@@ -918,6 +918,7 @@ import {
   getMonthEndTimestamp,
 } from '@/composables/utils.ts';
 import StreetViewProviders from '@/providers';
+import { generationConcurrency } from '@/concurrency';
 import { isInChina } from '@/constants';
 import {
   StreetViewStatus,
@@ -1257,9 +1258,14 @@ document.onkeydown = (event) => {
   }
 };
 
+function getRequestChunkSize(): number {
+  return settings.findRegions ? 1 : generationConcurrency.getChunkSize();
+}
+
 async function startGeneration() {
   if (!canBeStarted.value) return;
 
+  generationConcurrency.reset();
   state.started = true;
   generationStartTime.value = Date.now();
   await start();
@@ -1322,7 +1328,7 @@ async function start() {
 
 async function generate(polygon: Polygon) {
   if (settings.strategy === 'grid') {
-    const chunkSize = settings.findRegions ? 1 : 75;
+    const chunkSize = getRequestChunkSize();
     const batchSize = Math.max(chunkSize * 2, 150);
 
     polygon.isProcessing = true;
@@ -1388,7 +1394,7 @@ async function generate(polygon: Polygon) {
       }
     }
 
-    const chunkSize = settings.findRegions ? 1 : 75;
+    const chunkSize = getRequestChunkSize();
     for (const locationGroup of randomCoords.chunk(chunkSize)) {
       await Promise.allSettled(locationGroup.map((l) => getLoc(l, polygon)));
     }
@@ -1407,7 +1413,15 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
   if (!isInChina(loc.lng, loc.lat)) return false;
 
   return StreetViewProviders.getPanorama('baidu', getPanoramaRequest(loc), async (res, status) => {
-    if (status != StreetViewStatus.OK || !res || !res.location) return false;
+    if (status === StreetViewStatus.UNKNOWN_ERROR) {
+      generationConcurrency.recordError();
+      return false;
+    }
+    if (status != StreetViewStatus.OK || !res || !res.location) {
+      generationConcurrency.recordSuccess();
+      return false;
+    }
+    generationConcurrency.recordSuccess();
 
     if (settings.searchInDescription.enabled) {
       const descriptionMatchesSearch = searchInDescription(
@@ -1615,8 +1629,17 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
   StreetViewProviders.getPanorama('baidu', { pano: id }, async (pano, status) => {
     if (status == StreetViewStatus.UNKNOWN_ERROR) {
       polygon.checkedPanos.delete(id);
+      generationConcurrency.recordError();
+      const delay = generationConcurrency.getBackoffMs();
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
       return getPanoDeep(id, polygon, depth);
-    } else if (status != StreetViewStatus.OK) return;
+    } else if (status != StreetViewStatus.OK) {
+      generationConcurrency.recordSuccess();
+      return;
+    }
+    generationConcurrency.recordSuccess();
 
     const inCountry = booleanPointInPolygon(
       [pano.location.latLng.lng(), pano.location.latLng.lat()],
@@ -1804,7 +1827,7 @@ function addLocation(
         }
       }
     }
-    if (addMarker) {
+    if (addMarker && !settings.markers.glify) {
       const marker = L.marker([location.lat, location.lng], {
         icon: iconType,
         forceZIndex: zIndex,

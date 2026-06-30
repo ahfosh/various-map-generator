@@ -40,14 +40,60 @@ export class LRUCache<K, V> {
   }
 }
 
+const COORD_CACHE_NEGATIVE = Symbol('coord-cache-negative')
+
+export type CoordinateLookupResult =
+  | { type: 'miss' }
+  | { type: 'negative' }
+  | { type: 'positive'; panoId: string }
+
+export function getCoordinateCacheKey(lng: number, lat: number, radiusMeters: number): string {
+  const gridMeters = Math.max(radiusMeters, 50)
+  const metersPerDegLat = 111320
+  const latRad = (lat * Math.PI) / 180
+  const gridDegLat = gridMeters / metersPerDegLat
+  const gridDegLng = gridMeters / (metersPerDegLat * Math.cos(latRad))
+  const gridLng = Math.round(lng / gridDegLng)
+  const gridLat = Math.round(lat / gridDegLat)
+  return `${gridLng}_${gridLat}_${radiusMeters}`
+}
+
+export class CoordinateLookupCache {
+  private cache = new LRUCache<string, string | typeof COORD_CACHE_NEGATIVE>(2000)
+
+  lookup(key: string): CoordinateLookupResult {
+    const entry = this.cache.get(key)
+    if (entry === undefined) {
+      return { type: 'miss' }
+    }
+    if (entry === COORD_CACHE_NEGATIVE) {
+      return { type: 'negative' }
+    }
+    return { type: 'positive', panoId: entry }
+  }
+
+  setPositive(key: string, panoId: string): void {
+    this.cache.set(key, panoId)
+  }
+
+  setNegative(key: string): void {
+    this.cache.set(key, COORD_CACHE_NEGATIVE)
+  }
+
+  clear(): void {
+    this.cache.clear()
+  }
+}
+
 export class CacheManager {
   private caches = new Map<string, LRUCache<string, any>>();
   private lastUsedProvider: string | null = null;
+  private readonly panoCacheSize = 500
 
   getCache(provider: string): LRUCache<string, any> {
     if (!this.caches.has(provider)) {
       this.checkTotalCacheSize();
-      this.caches.set(provider, new LRUCache(100));
+      this.caches.set(provider, new LRUCache(this.panoCacheSize));
     }
     this.lastUsedProvider = provider;
     return this.caches.get(provider)!;
@@ -97,3 +143,4 @@ export class CacheManager {
 }
 
 export const cacheManager = new CacheManager();
+export const coordinateCache = new CoordinateLookupCache();
