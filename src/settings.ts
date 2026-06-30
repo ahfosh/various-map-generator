@@ -28,8 +28,8 @@ const defaultSettings = {
   panoId: 'enable',
   tag: true,
 
-  numOfGenerators: 1,
-  speed: 100,
+  numOfGenerators: 10,
+  speed: 1000,
   radius: 500,
   strategy: 'random',
   oneCountryAtATime: false,
@@ -120,7 +120,7 @@ const defaultSettings = {
     gen4: true,
     newRoad: true,
     cluster: false,
-    glify: false,
+    glify: true,
   },
   markersOnImport: true,
   checkImports: false,
@@ -129,7 +129,7 @@ const defaultSettings = {
 }
 
 const CURRENT_KEYS = Object.keys(localStorage)
-const CURRENT_KEY = 'map_generator__settings_v10'
+const CURRENT_KEY = 'map_generator__settings_v11'
 
 CURRENT_KEYS.forEach((key: string) => {
   if (

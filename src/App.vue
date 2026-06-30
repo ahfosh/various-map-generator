@@ -947,13 +947,13 @@ watch(
   },
 );
 
-const panels = useStorage('map_generator__panels_v1', {
-  general: true,
-  layer: true,
-  generatorSettings: true,
-  coverageSettings: true,
-  mapMakingSettings: true,
-  marker: true,
+const panels = useStorage('map_generator__panels_v2', {
+  general: false,
+  layer: false,
+  generatorSettings: false,
+  coverageSettings: false,
+  mapMakingSettings: false,
+  marker: false,
 });
 
 const { selected, select, state } = useStore();
