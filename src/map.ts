@@ -374,8 +374,23 @@ let glifyClickHandler: ((location: Panorama) => void) | null = null
 
 let pendingNewPoints: GlifyPoint[] = []
 let lastUpdateTime = 0
-let updateScheduledFrameId: number | null = null
-let lastRenderedCount = 0 
+let updateScheduledTimerId: ReturnType<typeof setTimeout> | null = null
+let lastRenderedCount = 0
+
+function getGlifyUpdateInterval(): number {
+  const count = glifyPoints.length
+  if (count > 10000) return 3000
+  if (count > 5000) return 2000
+  if (count > 1000) return 1000
+  return GLIFY_CONFIG.updateInterval
+}
+
+function cancelGlifyScheduledUpdate() {
+  if (updateScheduledTimerId !== null) {
+    clearTimeout(updateScheduledTimerId)
+    updateScheduledTimerId = null
+  }
+}
 
 function getPointVisibilityFilter(): (point: GlifyPoint) => boolean {
   return (point) => {
@@ -425,28 +440,16 @@ function getGlifyData(): GeoJSON.FeatureCollection<GeoJSON.Point> {
 }
 
 function scheduleGlifyUpdate() {
-  const now = Date.now()
-  const timeSinceLastUpdate = now - lastUpdateTime
+  if (updateScheduledTimerId !== null) return
 
-  if (updateScheduledFrameId !== null) {
-    return
-  }
+  const interval = getGlifyUpdateInterval()
+  const timeSinceLastUpdate = Date.now() - lastUpdateTime
+  const delay = Math.max(0, interval - timeSinceLastUpdate)
 
-  if (timeSinceLastUpdate >= GLIFY_CONFIG.updateInterval) {
-    updateScheduledFrameId = requestAnimationFrame(() => {
-      updateScheduledFrameId = null
-      flushGlifyUpdate()
-    })
-  } else {
-    const remainingTime = GLIFY_CONFIG.updateInterval - timeSinceLastUpdate
-    
-    updateScheduledFrameId = window.setTimeout(() => {
-      updateScheduledFrameId = null
-      requestAnimationFrame(() => {
-        flushGlifyUpdate()
-      })
-    }, remainingTime) as any
-  }
+  updateScheduledTimerId = setTimeout(() => {
+    updateScheduledTimerId = null
+    requestAnimationFrame(() => flushGlifyUpdate())
+  }, delay)
 }
 
 function flushGlifyUpdate() {
@@ -463,14 +466,21 @@ function flushGlifyUpdate() {
 function refreshGlifyLayer() {
   if (!map || !glifyEnabled) return
 
-  // Remove existing layer
-  if (glifyPointsInstance) {
-    glifyPointsInstance.remove()
-    glifyPointsInstance = null
+  const data = getGlifyData()
+  if (data.features.length === 0) {
+    if (glifyPointsInstance) {
+      glifyPointsInstance.remove()
+      glifyPointsInstance = null
+    }
+    lastRenderedCount = 0
+    return
   }
 
-  const data = getGlifyData()
-  if (data.features.length === 0) return
+  if (glifyPointsInstance) {
+    glifyPointsInstance.update(data)
+    lastRenderedCount = data.features.length
+    return
+  }
 
   glifyPointsInstance = L.glify.points({
     map: map,
@@ -529,11 +539,7 @@ function setGlifyMode(enabled: boolean) {
       glifyPointsInstance = null
     }
     
-    // Cancel pending updates
-    if (updateScheduledFrameId !== null) {
-      cancelAnimationFrame(updateScheduledFrameId)
-      updateScheduledFrameId = null
-    }
+    cancelGlifyScheduledUpdate()
     
     // Restore Leaflet marker layers based on settings
     Object.entries(markerLayers).forEach(([key]) => {
@@ -580,10 +586,7 @@ function clearGlifyPoints() {
     glifyPointsInstance = null
   }
   
-  if (updateScheduledFrameId !== null) {
-    cancelAnimationFrame(updateScheduledFrameId)
-    updateScheduledFrameId = null
-  }
+  cancelGlifyScheduledUpdate()
 }
 
 function registerGlifyClickHandler(handler: (location: Panorama) => void) {

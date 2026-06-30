@@ -4,10 +4,8 @@
   <div class="absolute bottom-1 left-1/2 -translate-x-1/2 font-bold text-xs text-black">
     缩放：{{ currentZoom }}
   </div>
-  <div
-    class="absolute top-1 left-1 min-w-95 max-w-[calc(80vw)] max-h-[calc(100vh-50px)] flex flex-col gap-1"
-  >
-    <div class="container">
+  <div class="settings-sidebar settings-sidebar--left">
+    <div class="container shrink-0">
       <h1
         class="logo px-2 py-0.5 flex gap-0.5 items-center justify-center text-xl tracking-tighter"
       >
@@ -15,16 +13,13 @@
         <Spinner icon="baidu" />生成器
       </h1>
     </div>
-    <div class="flex-1 min-h-0 flex flex-col gap-1">
-      <div class="container flex flex-col">
+    <div class="flex flex-col gap-1">
+      <div class="settings-panel">
         <div class="relative cursor-pointer" @click="panels.general = !panels.general">
           <h2>常规</h2>
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
-        <Collapsible
-          :is-open="panels.general"
-          class="flex flex-col gap-1 max-h-[180px] overflow-y-auto mt-2 p-1"
-        >
+        <Collapsible :is-open="panels.general" class="settings-panel-content">
           <div class="flex items-center justify-between ml-1 mr-1">
             主题：
             <select v-model="themeMode" class="w-22 ml-10">
@@ -40,7 +35,7 @@
               <option :value="false">关闭</option>
             </select>
           </div>
-          <div v-if="settings.notification.enabled" class="flex-1 ml-4 mb-1">
+          <div v-if="settings.notification.enabled" class="ml-4 mb-1">
             <Checkbox v-model="settings.notification.anyLocation">
               多边形内找到第一个地点
             </Checkbox>
@@ -133,18 +128,14 @@
           </div>
         </Collapsible>
       </div>
-    </div>
-    <div class="flex-1 min-h-0 flex flex-col gap-1">
-      <div v-if="!state.started" class="container flex flex-col">
+
+      <div v-if="!state.started" class="settings-panel">
         <div class="relative cursor-pointer" @click="panels.layer = !panels.layer">
           <h2>图层</h2>
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
 
-        <Collapsible
-          :is-open="panels.layer"
-          class="flex flex-col gap-1 max-h-[220px] overflow-y-auto mt-2 p-1"
-        >
+        <Collapsible :is-open="panels.layer" class="settings-panel-content">
           <div class="relative">
             <GeoJSONSearch
               @import="handleGeoJSONImport"
@@ -180,12 +171,9 @@
         </Collapsible>
       </div>
 
-      <div v-if="!state.started" class="container font-bold text-center">{{ select }}</div>
+      <div v-if="!state.started" class="container shrink-0 font-bold text-center">{{ select }}</div>
 
-      <div
-        v-if="selected.length"
-        class="container max-h-[300px] flex-1 min-h-0 flex flex-col gap-1"
-      >
+      <div v-if="selected.length" class="settings-panel">
         <h2>中国区域（{{ selected.length }}）</h2>
         <div class="px-1">
           <Checkbox v-model="settings.markersOnImport" title="可能影响性能。">
@@ -203,7 +191,7 @@
               :step="0.01"
               :tooltips="false"
               :lazy="false"
-              class="mt-1 w-80"
+              class="mt-1 w-full max-w-48"
             />
             <Checkbox
               v-model="settings.useUpdateTypeIconsOnImport"
@@ -219,7 +207,7 @@
           <hr />
         </div>
 
-        <div class="polygon-list">
+        <div class="polygon-list settings-panel-content--scroll">
           <div v-for="polygon of selected" :key="polygon._leaflet_id" class="polygon-item">
             <Button size="sm" squared title="导入地点">
               <label class="cursor-pointer">
@@ -281,7 +269,7 @@
       </div>
     </div>
 
-    <div class="container">
+    <div class="container shrink-0">
       <div class="flex items-center gap-2 p-1">
         <h2>导出全部（{{ totalLocs }}）</h2>
         <Button
@@ -321,11 +309,9 @@
     </div>
   </div>
 
-  <div
-    class="absolute bottom-1 sm:top-1 sm:bottom-auto right-1 w-70 sm:w-75 md:w-80 max-h-[calc(100vh-16px)] overflow-hidden flex flex-col gap-1"
-  >
-    <div class="flex flex-col gap-1 flex-1 min-h-0">
-      <div v-if="!state.started" class="container flex flex-col flex-1 min-h-0">
+  <div class="settings-sidebar settings-sidebar--right">
+    <div class="flex flex-col gap-1">
+      <div v-if="!state.started" class="settings-panel">
         <div
           class="relative cursor-pointer"
           @click="panels.generatorSettings = !panels.generatorSettings"
@@ -333,8 +319,7 @@
           <h2>生成器设置</h2>
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto">
-          <Collapsible :is-open="panels.generatorSettings" class="mt-1 p-1 pr-2">
+        <Collapsible :is-open="panels.generatorSettings" class="settings-panel-content pr-1">
             <div class="flex items-center justify-between">
               全景 ID：
               <select v-model="settings.panoId" class="w-24 ml-10">
@@ -412,10 +397,9 @@
 
             <Checkbox v-model="settings.tag"> 为地点启用自动标签 </Checkbox>
           </Collapsible>
-        </div>
       </div>
 
-      <div v-if="!state.started" class="container flex flex-col flex-1 min-h-0">
+      <div v-if="!state.started" class="settings-panel">
         <div
           class="cursor-pointer relative"
           @click="panels.coverageSettings = !panels.coverageSettings"
@@ -423,8 +407,7 @@
           <h2>覆盖设置</h2>
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto">
-          <Collapsible :is-open="panels.coverageSettings" class="p-1">
+        <Collapsible :is-open="panels.coverageSettings" class="settings-panel-content">
             <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
 
             <Checkbox v-model="settings.rejectNoDescription"> 拒绝无描述的地点 </Checkbox>
@@ -506,7 +489,7 @@
               </div>
             </div>
 
-            <div class="flex items-center">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Checkbox v-model="settings.filterByMinutes.enabled">按分钟筛选</Checkbox>
               <Slider
                 v-if="settings.filterByMinutes.enabled"
@@ -516,7 +499,7 @@
                 :step="5"
                 :showTooltip="'focus'"
                 :range="true"
-                class="w-48 ml-2"
+                class="w-full max-w-48"
                 :format="
                   (val) => {
                     const h = Math.floor(val / 60)
@@ -553,10 +536,9 @@
 
             <Checkbox v-model="settings.randomInTimeline"> 在时间范围内随机选择日期 </Checkbox>
           </Collapsible>
-        </div>
       </div>
 
-      <div v-if="!state.started" class="container settings flex flex-col flex-1 min-h-0">
+      <div v-if="!state.started" class="settings-panel settings">
         <div
           class="cursor-pointer relative"
           @click="panels.mapMakingSettings = !panels.mapMakingSettings"
@@ -565,8 +547,7 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
 
-        <div class="flex-1 min-h-0 overflow-y-auto">
-          <Collapsible :is-open="panels.mapMakingSettings" class="p-1">
+        <Collapsible :is-open="panels.mapMakingSettings" class="settings-panel-content">
             <div class="flex items-center gap-1 relative">
               <Checkbox v-model="settings.searchInDescription.enabled">在全景描述中搜索 </Checkbox>
               <Tooltip>
@@ -787,16 +768,14 @@
               >范围内随机
             </Checkbox>
           </Collapsible>
-        </div>
       </div>
 
-      <div class="container flex flex-col flex-1">
+      <div class="settings-panel">
         <div class="cursor-pointer relative" @click="panels.marker = !panels.marker">
           <h2>标记</h2>
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
-        <div class="flex-1 min-h-0">
-          <Collapsible :is-open="panels.marker" class="p-1">
+        <Collapsible :is-open="panels.marker" class="settings-panel-content">
             <Checkbox
               v-model="settings.markers.newRoad"
               v-on:change="updateMarkerLayers('newRoad')"
@@ -818,7 +797,7 @@
             <Checkbox
               v-model="settings.markers.glify"
               v-on:change="handleGlifyToggle"
-              title="使用 WebGL 渲染大量点位。"
+              title="使用 WebGL 渲染大量点位。点位较多时可能卡顿，低配设备建议关闭并改用聚合标记。"
             >
               <span class="marker-swatch marker-swatch-glify"></span>
               高性能
@@ -834,11 +813,11 @@
               <MarkerIcon class="w-5 h-5" />清除
             </Button>
           </Collapsible>
-        </div>
       </div>
 
       <Button
         v-if="canBeStarted"
+        class="shrink-0"
         @click="handleClickStart"
         :variant="state.started ? 'danger' : 'primary'"
         title="空格键/回车键"
@@ -2039,6 +2018,58 @@ body {
   background: var(--container-bg);
   color: var(--text-color);
   contain: layout style;
+}
+
+.settings-sidebar {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: max-content;
+  min-width: 18rem;
+  max-width: min(80vw, calc(100vw - 0.5rem));
+  max-height: calc(100vh - 0.5rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.settings-sidebar--left {
+  top: 0.25rem;
+  left: 0.25rem;
+}
+
+.settings-sidebar--right {
+  bottom: 0.25rem;
+  right: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .settings-sidebar--right {
+    top: 0.25rem;
+    bottom: auto;
+  }
+}
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: var(--container-bg);
+  color: var(--text-color);
+  contain: layout style;
+}
+
+.settings-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  padding: 0.25rem;
+}
+
+.settings-panel-content--scroll {
+  max-height: min(50vh, calc(100vh - 16rem));
+  overflow-y: auto;
 }
 
 .logo {
