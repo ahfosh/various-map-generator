@@ -53,9 +53,6 @@ importers:
       '@types/leaflet-draw':
         specifier: ^1.0.13
         version: 1.0.13
-      '@types/leaflet.markercluster':
-        specifier: ^1.5.6
-        version: 1.5.6
       '@types/node':
         specifier: ^26.0.1
         version: 26.0.1
@@ -77,9 +74,6 @@ importers:
       eslint-plugin-vue:
         specifier: ~10.9.2
         version: 10.9.2(@typescript-eslint/parser@8.62.0(eslint@10.6.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.6.0(jiti@2.7.0))(vue-eslint-parser@10.4.1(eslint@10.6.0(jiti@2.7.0)))
-      jiti:
-        specifier: ^2.7.0
-        version: 2.7.0
       npm-run-all2:
         specifier: ^9.0.2
         version: 9.0.2
@@ -1103,12 +1097,6 @@ packages:
     resolution:
       {
         integrity: sha512-YU82kilOaU+wPNbqKCCDfHH3hqepN6XilrBwG/mSeZ/z4ewumaRCOah44s3FMxSu/Aa0SVa3PPJvhIZDUA09mw==,
-      }
-
-  '@types/leaflet.markercluster@1.5.6':
-    resolution:
-      {
-        integrity: sha512-I7hZjO2+isVXGYWzKxBp8PsCzAYCJBc29qBdFpquOCkS7zFDqUsUvkEOyQHedsk/Cy5tocQzf+Ndorm5W9YKTQ==,
       }
 
   '@types/leaflet@1.9.21':
@@ -3578,10 +3566,6 @@ snapshots:
       '@types/leaflet': 1.9.21
 
   '@types/leaflet-draw@1.0.13':
-    dependencies:
-      '@types/leaflet': 1.9.21
-
-  '@types/leaflet.markercluster@1.5.6':
     dependencies:
       '@types/leaflet': 1.9.21
 
