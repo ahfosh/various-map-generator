@@ -19,10 +19,6 @@ export class LatLng {
   lng() {
     return this._lng
   }
-
-  toJSON(): LatLngLiteral {
-    return { lat: this._lat, lng: this._lng }
-  }
 }
 
 export type LatLngLiteral = { lat: number; lng: number }

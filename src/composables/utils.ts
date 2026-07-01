@@ -1,40 +1,4 @@
-import type {
-  StreetViewLink,
-  StreetViewLocation,
-  StreetViewPanoramaData,
-} from '@/streetview-types';
-import { normalizeChinaCountryCode } from '@/constants';
-
-export const MONTHS_NAME = [
-  '一月',
-  '二月',
-  '三月',
-  '四月',
-  '五月',
-  '六月',
-  '七月',
-  '八月',
-  '九月',
-  '十月',
-  '十一月',
-  '十二月',
-];
-
-export function getCountryName(countryCode: string, locale: string = 'zh'): string {
-  try {
-    if (!countryCode) {
-      return '未知';
-    }
-    if (normalizeChinaCountryCode(countryCode)) {
-      return '中国';
-    }
-    const displayNames = new Intl.DisplayNames([locale], { type: 'region' });
-    return displayNames.of(countryCode.toUpperCase()) || countryCode;
-  } catch (error) {
-    console.warn('获取国家名称失败：', error);
-    return countryCode || '未知';
-  }
-}
+import type { StreetViewLink, StreetViewLocation } from '@/streetview-types';
 
 export function getMonthEndTimestamp(monthString: string): number {
   const date = new Date(monthString);
@@ -43,77 +7,7 @@ export function getMonthEndTimestamp(monthString: string): number {
   return date.getTime();
 }
 
-async function createDiscordMessage(
-  title: string,
-  pano: {
-    panoId: string;
-    lat: number;
-    lng: number;
-    heading: number;
-    imageDate: string;
-    country: string;
-    region: string;
-    locality: string;
-    road: string;
-    update_type: string;
-  },
-): Promise<string> {
-  let position_word = '位于';
-  if (pano.locality) {
-    if (pano.road && pano.road == pano.locality) position_word = '在';
-  } else if (pano.road) position_word = '在';
-  const link = `https://map.baidu.com/?newmap=1&shareurl=1&panotype=street&l=21&tn=B_NORMAL_MAP&sc=0&panoid=${pano.panoId}&pid=${pano.panoId}`;
-  const countryName = getCountryName(pano.country || '');
-  const countryCode =
-    normalizeChinaCountryCode(pano.country) ?? (pano.country ? pano.country.toLowerCase() : 'xx');
-  return `:white_check_mark: ${title}\n\n:flag_${countryCode}:${pano.update_type ? ` :${pano.update_type}: ` : ' '}${MONTHS_NAME[parseInt(pano.imageDate.slice(5, 7)) - 1]} ${pano.imageDate.slice(0, 4)} ${position_word} ${pano.locality || pano.road || ''}${pano.locality || pano.road ? ', ' : ''}${pano.region || ''}, ${countryName}\n<${link}>`;
-}
-
-export async function sendToDiscord(
-  url: string,
-  title: string,
-  data: {
-    panoId: string;
-    lat: number;
-    lng: number;
-    heading: number;
-    imageDate: string;
-    country: string;
-    region: string;
-    road: string;
-    locality: string;
-    update_type: string;
-  },
-): Promise<void> {
-  const content = data ? await createDiscordMessage(title, data) : title;
-  const payload = JSON.stringify({
-    content,
-    username: '百度街景生成器',
-    avatar_url: 'https://various-map-generator.pages.dev/favicon.png',
-  });
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: payload,
-    });
-    if (response.status != 204) {
-      console.error('Error sending message to Discord.');
-    }
-  } catch (error) {
-    //console.error("Error sending message to Discord: " + error);
-  }
-}
-
-export function sendNotifications(
-  title: string,
-  body: string,
-  isDiscord: boolean = false,
-  webhook?: string,
-  location?: any,
-) {
+export function sendNotifications(title: string, body: string) {
   try {
     if (Notification.permission === 'granted') {
       new Notification(title, { body, icon: '/favicon.ico' });
@@ -121,51 +15,10 @@ export function sendNotifications(
   } catch (error) {
     console.warn('Notification failed:', error);
   }
-
-  if (isDiscord && webhook) {
-    try {
-      sendToDiscord(webhook, `**${body}**`, location);
-    } catch (error) {
-      //console.error("Error sending message to Discord: " + error);
-    }
-  }
 }
 
 export function hasAnyDescription(location: StreetViewLocation) {
   return location.description || location.shortDescription;
-}
-
-export function wgs84_to_tile_coord(lat: number, lng: number, zoom: number) {
-  const latRad = (lat * Math.PI) / 180.0;
-  const scale = 1 << zoom;
-  const x = ((lng + 180.0) / 360.0) * scale;
-  const y = ((1.0 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2.0) * scale;
-  return [Math.floor(x), Math.floor(y)];
-}
-
-export function tile_coord_to_wgs84(x: number, y: number, zoom: number) {
-  const scale = 1 << zoom;
-  const lonDeg = (x / scale) * 360.0 - 180.0;
-  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale)));
-  const latDeg = (latRad * 180.0) / Math.PI;
-  return [latDeg, lonDeg];
-}
-
-export function pixelToLatLng(
-  x: number,
-  y: number,
-  zoom: number,
-  tileX: number,
-  tileY: number,
-  tileSize: number,
-): [number, number] {
-  const n = Math.pow(2, zoom);
-  const globalX = (tileX * tileSize + x) / tileSize;
-  const globalY = (tileY * tileSize + y) / tileSize;
-  const lng = (globalX / n) * 360 - 180;
-  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * globalY) / n)));
-  const lat = (latRad * 180) / Math.PI;
-  return [lat, lng];
 }
 
 export function isAcceptableCurve(links: StreetViewLink[], minCurveAngle: number): boolean {
@@ -249,11 +102,9 @@ export function getCurrentDate() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  //const day = String(now.getDate()).padStart(2, '0')
   return {
     currentYear: year,
     currentDate: `${year}-${month}`,
-    //currentDate: `${year}-${month}-${day}`,
   };
 }
 
@@ -279,18 +130,6 @@ export function extractDateFromPanoId(pano: string) {
   const minute = pano.slice(8, 10);
   const second = pano.slice(10, 12);
   return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
-}
-
-export function formatTimeStr(datetimeStr: string): string {
-  const date = new Date(datetimeStr);
-  if (isNaN(date.getTime())) throw new Error('Invalid date string');
-  const yyyy = date.getFullYear();
-  const mm = (date.getMonth() + 1).toString().padStart(2, '0');
-  const dd = date.getDate().toString().padStart(2, '0');
-  const hh = date.getHours().toString().padStart(2, '0');
-  const min = date.getMinutes().toString().padStart(2, '0');
-  const sec = date.getSeconds().toString().padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec}`;
 }
 
 export function randomPointInPoly(polygon: Polygon) {
@@ -775,25 +614,6 @@ export class GridGenerator {
     this.bitWords.fill(0);
   }
 
-  public getState(): PolygonState {
-    return this.state;
-  }
-
-  public approxVisitedCountSample(): number {
-    // sample-based estimate of set bits
-    let sum = 0;
-    const words = this.bitWords;
-    const step = Math.max(1, Math.floor(words.length / 1024));
-    let samples = 0;
-    for (let i = 0; i < words.length; i += step) {
-      samples++;
-      sum += popcount32(words[i]);
-    }
-    if (samples === 0) return 0;
-    const avg = sum / samples;
-    return Math.round(avg * words.length);
-  }
-
   /**
    * Clear saved state for this generator.
    * Called when polygon is deleted or generation is complete.
@@ -802,18 +622,6 @@ export class GridGenerator {
   public clearSavedState(): void {
     this.reset(this.polygon);
   }
-}
-
-// popcount for 32-bit words
-function popcount32(x: number) {
-  x = x - ((x >>> 1) & 0x55555555);
-  x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
-  return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
-}
-
-export function radians_to_degrees(radians: number) {
-  const pi = Math.PI;
-  return radians * (180 / pi);
 }
 
 export function distanceBetween(coords1: LatLng, coords2: LatLng) {
@@ -863,14 +671,10 @@ export function getPolygonName(properties: Polygon['feature']['properties']) {
 }
 
 export function changePolygonName(properties: Polygon['feature']['properties']) {
-  // if (typeof polygon.feature.properties.code == 'undefined') {
   const newName = prompt('多边形新名称：');
   if (typeof newName === 'string' && newName !== '') {
     properties.name = newName;
   }
-  //let countryCode = prompt("Country code (optional): ");
-  //polygon.feature.properties.code = countryCode;
-  // }
 }
 
 export async function readFileAsText(file: File) {
@@ -889,25 +693,4 @@ export function isValidGeoJSON(data: unknown) {
   return type === 'Feature' || type === 'FeatureCollection';
 }
 
-export function calculateTilesInRadius(
-  lat: number,
-  lng: number,
-  radius: number,
-  zoom: number,
-): number[] {
-  const tileSizeMeters = 40075000 / Math.pow(2, zoom);
-  const [tileX, tileY] = wgs84_to_tile_coord(lat, lng, zoom);
 
-  let minX = tileX,
-    maxX = tileX,
-    minY = tileY,
-    maxY = tileY;
-  if (radius > tileSizeMeters / 2) {
-    const tileRadius = Math.ceil(radius / tileSizeMeters);
-    minX = tileX - tileRadius;
-    maxX = tileX + tileRadius;
-    minY = tileY - tileRadius;
-    maxY = tileY + tileRadius;
-  }
-  return [minX, minY, maxX, maxY];
-}

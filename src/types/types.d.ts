@@ -15,10 +15,6 @@ interface Feature extends GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon
   }
 }
 
-interface FeatureCollection extends GeoJSON.FeatureCollection {
-  features: Feature[]
-}
-
 interface Polygon extends L.Polygon {
   _leaflet_id: number
   feature: Feature

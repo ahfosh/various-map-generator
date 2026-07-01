@@ -15,10 +15,6 @@ declare module 'leaflet' {
 
   interface Marker {
     polygonID: number
-    // _icon?: HTMLElement
-    // _zIndex?: number
-    // _updateZIndex(offset: number): void
-    // setForceZIndex(forceZIndex?: number | null): void
   }
 
   interface MarkerClusterGroup {

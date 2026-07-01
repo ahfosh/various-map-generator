@@ -380,7 +380,6 @@ let glifyClickHandler: ((location: Panorama) => void) | null = null
 let pendingNewPoints: GlifyPoint[] = []
 let lastUpdateTime = 0
 let updateScheduledTimerId: ReturnType<typeof setTimeout> | null = null
-let lastRenderedCount = 0
 
 function getGlifyUpdateInterval(): number {
   const count = glifyPoints.length
@@ -477,13 +476,11 @@ function refreshGlifyLayer() {
       glifyPointsInstance.remove()
       glifyPointsInstance = null
     }
-    lastRenderedCount = 0
     return
   }
 
   if (glifyPointsInstance) {
     glifyPointsInstance.update(data)
-    lastRenderedCount = data.features.length
     return
   }
 
@@ -514,8 +511,6 @@ function refreshGlifyLayer() {
     sensitivity: 2,
     pane: 'labelPane',
   })
-
-  lastRenderedCount = data.features.length
 }
 
 function setGlifyMode(enabled: boolean) {
@@ -535,7 +530,6 @@ function setGlifyMode(enabled: boolean) {
     
     // Clear pending updates and render initial layer
     pendingNewPoints = []
-    lastRenderedCount = 0
     refreshGlifyLayer()
   } else {
     // Remove glify layer
@@ -584,7 +578,6 @@ function removeGlifyPointsForPolygon(polygonId: number) {
 function clearGlifyPoints() {
   glifyPoints = []
   pendingNewPoints = []
-  lastRenderedCount = 0
   
   if (glifyPointsInstance) {
     glifyPointsInstance.remove()
@@ -596,10 +589,6 @@ function clearGlifyPoints() {
 
 function registerGlifyClickHandler(handler: (location: Panorama) => void) {
   glifyClickHandler = handler
-}
-
-function configureGlifyPerformance(options: Partial<typeof GLIFY_CONFIG>) {
-  Object.assign(GLIFY_CONFIG, options)
 }
 
 // ============ End High Performance Rendering ============
@@ -991,6 +980,5 @@ export {
   addGlifyPoint,
   registerGlifyClickHandler,
   removeGlifyPointsForPolygon,
-  GLIFY_CONFIG,
   type MarkerLayersTypes,
 }

@@ -138,7 +138,6 @@ async function getFromBaidu(
 
 const StreetViewProviders = {
   getPanorama: async (
-    _provider: string,
     request: StreetViewLocationRequest,
     onCompleted: (res: StreetViewPanoramaData | null, status: StreetViewStatus) => void,
   ) => {

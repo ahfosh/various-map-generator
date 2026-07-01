@@ -10,7 +10,7 @@
         class="logo px-2 py-0.5 flex gap-0.5 items-center justify-center text-xl tracking-tighter"
       >
         百度街景
-        <Spinner icon="baidu" />生成器
+        <Spinner />生成器
       </h1>
     </div>
     <div class="flex flex-col gap-1">
@@ -227,7 +227,7 @@
             <label class="polygon-name" @click="changePolygonName(polygon.feature.properties)">
               {{ getPolygonName(polygon.feature.properties) }}
             </label>
-            <Spinner v-if="state.started && polygon.isProcessing" icon="baidu" animate />
+            <Spinner v-if="state.started && polygon.isProcessing" animate />
 
             <div class="polygon-counter">
               {{ polygon.found.length }}
@@ -1386,7 +1386,7 @@ function getPanoramaRequest(loc: LatLng): StreetViewLocationRequest {
 async function getLoc(loc: LatLng, polygon: Polygon) {
   if (!isInChina(loc.lng, loc.lat)) return false;
 
-  return StreetViewProviders.getPanorama('baidu', getPanoramaRequest(loc), async (res, status) => {
+  return StreetViewProviders.getPanorama(getPanoramaRequest(loc), async (res, status) => {
     if (status === StreetViewStatus.UNKNOWN_ERROR) {
       generationConcurrency.recordError();
       return false;
@@ -1600,7 +1600,7 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
   if (polygon.checkedPanos.has(id)) return;
   else polygon.checkedPanos.add(id);
 
-  StreetViewProviders.getPanorama('baidu', { pano: id }, async (pano, status) => {
+  StreetViewProviders.getPanorama({ pano: id }, async (pano, status) => {
     if (status == StreetViewStatus.UNKNOWN_ERROR) {
       polygon.checkedPanos.delete(id);
       generationConcurrency.recordError();
@@ -1630,8 +1630,6 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
         if (iDate >= fromDate && iDate <= toDate) {
           // if date ranges from fromDate to toDate, set dateWithin to true and stop the loop
           getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
-          // TODO: add settings.onlyOneLoc
-          // if(settings.onlyOneLoc)break;
         }
       }
     }
@@ -1780,24 +1778,19 @@ function addLocation(
         sendNotifications(
           '找到地点',
           `在 ${getPolygonName(polygon.feature.properties)} 中找到第一个地点（${elapsedTime} 秒）`,
-          false,
-          null,
-          location,
         );
       }
       if (settings.notification.onePolygonComplete && polygon.found.length >= polygon.nbNeeded) {
         sendNotifications(
           '多边形已完成',
           `${getPolygonName(polygon.feature.properties)} 已达到目标（${elapsedTime} 秒）`,
-          false,
-          null,
         );
       }
 
       if (settings.notification.allPolygonsComplete) {
         const allComplete = selected.value.every((p) => p.found.length >= p.nbNeeded);
         if (allComplete) {
-          sendNotifications('生成完成', `所有多边形均已达到目标（${elapsedTime} 秒）`, false, null);
+          sendNotifications('生成完成', `所有多边形均已达到目标（${elapsedTime} 秒）`);
         }
       }
     }
@@ -1953,8 +1946,6 @@ window.onbeforeunload = function () {
   }
 };
 
-// window.type = !0
-// not sure if really needed
 (function (global: typeof L.Marker | undefined) {
   const MarkerMixin = {
     _updateZIndex: function (offset: number) {

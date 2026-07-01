@@ -36,8 +36,6 @@ const defaultSettings = {
   findRegions: false,
   regionRadius: 100,
 
-  provider: 'baidu',
-
   rejectDateless: true,
   rejectNoDescription: true,
   rejectRoadName: false,

@@ -1,4 +1,4 @@
-export class LRUCache<K, V> {
+class LRUCache<K, V> {
   private cache = new Map<K, V>();
 
   constructor(private maxSize: number) { }
@@ -42,7 +42,7 @@ export class LRUCache<K, V> {
 
 const COORD_CACHE_NEGATIVE = Symbol('coord-cache-negative')
 
-export type CoordinateLookupResult =
+type CoordinateLookupResult =
   | { type: 'miss' }
   | { type: 'negative' }
   | { type: 'positive'; panoId: string }
@@ -58,7 +58,7 @@ export function getCoordinateCacheKey(lng: number, lat: number, radiusMeters: nu
   return `${gridLng}_${gridLat}_${radiusMeters}`
 }
 
-export class CoordinateLookupCache {
+class CoordinateLookupCache {
   private cache = new LRUCache<string, string | typeof COORD_CACHE_NEGATIVE>(2000)
 
   lookup(key: string): CoordinateLookupResult {
@@ -85,7 +85,7 @@ export class CoordinateLookupCache {
   }
 }
 
-export class CacheManager {
+class CacheManager {
   private caches = new Map<string, LRUCache<string, any>>();
   private lastUsedProvider: string | null = null;
   private readonly panoCacheSize = 500
@@ -112,19 +112,6 @@ export class CacheManager {
   has(provider: string, key: string): boolean {
     const cache = this.getCache(provider);
     return cache.has(key);
-  }
-
-  clearCache(provider: string): void {
-    const cache = this.caches.get(provider);
-    if (cache) {
-      cache.clear();
-    }
-  }
-
-  clearAllCaches(): void {
-    for (const cache of this.caches.values()) {
-      cache.clear();
-    }
   }
 
   private checkTotalCacheSize(): void {

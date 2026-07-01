@@ -1,24 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import GeoIcon from '@/assets/icons/geoicon.svg'
 import BaiduIcon from '@/assets/icons/baidu.svg'
 
 const props = defineProps<{
   size?: string
-  icon?: string
   animate?: boolean
 }>()
 
 const { size = '1' } = props
 
-const icons: Record<string, typeof BaiduIcon> = {
-  geo: GeoIcon,
-  baidu: BaiduIcon,
-}
-
-const iconComponent = computed(() => {
-  return icons[props.icon ?? 'baidu'] ?? BaiduIcon
-})
+const iconComponent = computed(() => BaiduIcon)
 </script>
 
 <template>
