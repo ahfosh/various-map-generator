@@ -758,6 +758,7 @@ import {
   removeGlifyPointByPanoId,
   removeGlifyPointsForImported,
   IMPORTED_LOCATIONS_POLYGON_ID,
+  fitMapToLatLngs,
   type LayerMeta,
   type MarkerLayersTypes,
 } from '@/map';
@@ -1665,6 +1666,8 @@ async function importLocations(e: Event) {
   const input = e.target as HTMLInputElement;
   if (!input.files) return;
 
+  const importedPoints: LatLng[] = [];
+
   for (const file of input.files) {
     if (!isJsonFile(file)) {
       alert('未知文件类型：' + file.type + '。仅支持导入 JSON。');
@@ -1694,6 +1697,8 @@ async function importLocations(e: Event) {
       const location = normalizeImportedPanorama(rawLocation);
       if (!location.panoId || location.lat == null || location.lng == null) continue;
 
+      importedPoints.push({ lat: location.lat, lng: location.lng });
+
       if (settings.checkImports && location.links) {
         for (const link of location.links) {
           if (!importedPanoIds.has(link)) {
@@ -1713,6 +1718,10 @@ async function importLocations(e: Event) {
         settings.importedMarkersOpacity ?? 1.0,
       );
     }
+  }
+
+  if (importedPoints.length > 0) {
+    fitMapToLatLngs(importedPoints);
   }
 
   input.value = '';

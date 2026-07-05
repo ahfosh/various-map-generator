@@ -908,6 +908,31 @@ const icons = {
   newLoc: L.icon({ iconUrl: markerRed, iconAnchor: [12, 41] }),
 }
 
+function fitMapToLatLngs(points: LatLng[], padding: [number, number] = [40, 40]) {
+  if (!map || points.length === 0) return
+
+  let bounds = L.latLngBounds(points.map((point) => [point.lat, point.lng] as [number, number]))
+  const center = bounds.getCenter()
+  const latSpan = bounds.getNorth() - bounds.getSouth()
+  const lngSpan = bounds.getEast() - bounds.getWest()
+
+  // Single point or coincident points: give bounds a minimal span so zoom can be derived
+  const minSpan = 0.002
+  if (latSpan < minSpan || lngSpan < minSpan) {
+    const halfLat = Math.max(latSpan, minSpan) / 2
+    const halfLng = Math.max(lngSpan, minSpan) / 2
+    bounds = L.latLngBounds(
+      [center.lat - halfLat, center.lng - halfLng],
+      [center.lat + halfLat, center.lng + halfLng],
+    )
+  }
+
+  const paddingPoint = L.point(padding[1], padding[0])
+  const zoom = map.getBoundsZoom(bounds, false, paddingPoint)
+  const clampedZoom = Math.min(map.getMaxZoom(), Math.max(map.getMinZoom(), zoom))
+  map.setView(bounds.getCenter(), clampedZoom)
+}
+
 export {
   L,
   initMap,
@@ -934,5 +959,6 @@ export {
   removeGlifyPointByPanoId,
   removeGlifyPointsForImported,
   IMPORTED_LOCATIONS_POLYGON_ID,
+  fitMapToLatLngs,
   type MarkerLayersTypes,
 }
