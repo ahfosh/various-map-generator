@@ -7,16 +7,6 @@ export function getMonthEndTimestamp(monthString: string): number {
   return date.getTime();
 }
 
-export function sendNotifications(title: string, body: string) {
-  try {
-    if (Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '/favicon.ico' });
-    }
-  } catch (error) {
-    console.warn('Notification failed:', error);
-  }
-}
-
 export function hasAnyDescription(location: StreetViewLocation) {
   return location.description || location.shortDescription;
 }

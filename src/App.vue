@@ -29,76 +29,6 @@
             </select>
           </div>
           <div class="flex items-center justify-between ml-1 mr-1">
-            通知：
-            <select v-model="settings.notification.enabled" class="w-22 ml-2">
-              <option :value="true">开启</option>
-              <option :value="false">关闭</option>
-            </select>
-          </div>
-          <div v-if="settings.notification.enabled" class="ml-4 mb-1">
-            <Checkbox v-model="settings.notification.anyLocation">
-              多边形内找到第一个地点
-            </Checkbox>
-            <Checkbox v-model="settings.notification.onePolygonComplete">
-              一个多边形已完成
-            </Checkbox>
-            <Checkbox v-model="settings.notification.allPolygonsComplete">
-              所有多边形已完成
-            </Checkbox>
-          </div>
-          <div class="flex items-center justify-between ml-1 mr-1">
-            定时任务：
-            <select
-              v-model="settings.scheduled.enabled"
-              class="w-22 ml-2"
-              @change="handleScheduledChange"
-            >
-              <option :value="true">开启</option>
-              <option :value="false">关闭</option>
-            </select>
-          </div>
-          <div v-if="settings.scheduled.enabled" class="flex flex-col ml-4 gap-1 mr-1">
-            <div class="flex items-center justify-between">
-              开始于：
-              <span>
-                <input
-                  type="number"
-                  v-model.number="settings.scheduled.after"
-                  min="0.1"
-                  class="w-16 h-5 px-2 py-1 border rounded text-right"
-                  @change="validateScheduleTime"
-                />
-                分钟
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              持续时长：
-              <span>
-                <input
-                  type="number"
-                  v-model.number="settings.scheduled.last"
-                  min="0.1"
-                  class="w-16 h-5 px-2 py-1 border rounded text-right"
-                  @change="validateScheduleTime"
-                />
-                分钟
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              重复间隔：
-              <span>
-                <input
-                  type="number"
-                  v-model.number="settings.scheduled.interval"
-                  min="0"
-                  class="w-16 h-5 px-2 py-1 border rounded text-right"
-                  @change="validateScheduleTime"
-                />
-                分钟
-              </span>
-            </div>
-          </div>
-          <div class="flex items-center justify-between ml-1 mr-1">
             地图主题：
             <select
               v-model="settings.mapTheme"
@@ -821,7 +751,7 @@
 
 <script setup lang="ts">
 // @ts-nocheck
-import { onMounted, watch, computed, ref, onBeforeUnmount } from 'vue';
+import { onMounted, computed, ref, onBeforeUnmount } from 'vue';
 import { useStorage, useColorMode } from '@vueuse/core';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
@@ -872,7 +802,6 @@ import {
 
 import { getTileColorPresence } from '@/composables/tileColorDetector';
 import {
-  sendNotifications,
   randomPointInPoly,
   GridGenerator,
   resetPolygonSearchState,
@@ -901,24 +830,6 @@ import {
 const { currentDate } = getCurrentDate();
 const themeMode = useColorMode();
 
-watch(
-  () => settings.notification.enabled,
-  async (enabled) => {
-    if (enabled === true && Notification.permission === 'default') {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          settings.notification.enabled = false;
-          alert('通知权限被拒绝。');
-        }
-      } catch (err) {
-        console.warn('Notification request failed:', err);
-        settings.notification.enabled = false;
-      }
-    }
-  },
-);
-
 const panels = useStorage('map_generator__panels_v2', {
   general: false,
   layer: false,
@@ -930,14 +841,6 @@ const panels = useStorage('map_generator__panels_v2', {
 
 const { selected, select, state } = useStore();
 const allFoundPanoIds = new Set<string>();
-const generationStartTime = ref<number>(0);
-const scheduledTaskTimer = ref<number | null>(null);
-const countdownTimer = ref<number | null>(null);
-const pauseCountdownTimer = ref<number | null>(null);
-const resumeCountdownTimer = ref<number | null>(null);
-const countdown = ref<number>(0);
-const pauseCountdown = ref<number>(0);
-const resumeCountdown = ref<number>(0);
 
 // Grid generators cache - persist across pause/resume
 const gridGenerators = new Map<number, GridGenerator>();
@@ -979,149 +882,7 @@ const totalLocs = computed(() =>
   selected.value.reduce((sum, country) => sum + country.found.length, 0),
 );
 
-const startButtonText = computed(() => {
-  if (state.started) {
-    if (settings.scheduled.enabled && pauseCountdown.value > 0) {
-      return `${Math.ceil(pauseCountdown.value / 1000)} 秒后暂停`;
-    }
-    return '暂停';
-  }
-  if (countdown.value > 0) return `${Math.ceil(countdown.value / 1000)} 秒后开始`;
-  if (scheduledTaskTimer.value && settings.scheduled.interval)
-    return `${Math.ceil(resumeCountdown.value / 1000)} 秒后重启`;
-  return '开始';
-});
-
-// Handle scheduled task functionality
-function handleScheduledChange(enabled: boolean) {
-  if (!enabled && scheduledTaskTimer.value !== null) {
-    state.started = false;
-    clearTimeout(scheduledTaskTimer.value);
-    scheduledTaskTimer.value = null;
-    clearInterval(countdownTimer.value);
-    countdownTimer.value = null;
-    clearInterval(pauseCountdownTimer.value);
-    pauseCountdownTimer.value = null;
-    clearInterval(resumeCountdownTimer.value);
-    resumeCountdownTimer.value = null;
-    countdown.value = 0;
-    pauseCountdown.value = 0;
-    resumeCountdown.value = 0;
-  }
-}
-
-function validateScheduleTime() {
-  // Ensure after is at least 1 minute
-  if (settings.scheduled.after < 0) {
-    settings.scheduled.after = 0;
-  }
-  if (settings.scheduled.last < 0.1) {
-    settings.scheduled.last = 0.1;
-  }
-  // Ensure interval is non-negative
-  if (settings.scheduled.interval < 0) {
-    settings.scheduled.interval = 0;
-  }
-}
-
-function startScheduledTask() {
-  // Clear any existing timers
-  if (scheduledTaskTimer.value !== null) {
-    clearTimeout(scheduledTaskTimer.value);
-    clearInterval(scheduledTaskTimer.value);
-    scheduledTaskTimer.value = null;
-  }
-  if (countdownTimer.value !== null) {
-    clearInterval(countdownTimer.value);
-    countdownTimer.value = null;
-  }
-  if (pauseCountdownTimer.value !== null) {
-    clearInterval(pauseCountdownTimer.value);
-    pauseCountdownTimer.value = null;
-  }
-  if (resumeCountdownTimer.value !== null) {
-    clearInterval(resumeCountdownTimer.value);
-    resumeCountdownTimer.value = null;
-  }
-  countdown.value = 0;
-  pauseCountdown.value = 0;
-  resumeCountdown.value = 0;
-
-  // Convert minutes to milliseconds
-  const afterDelay = settings.scheduled.after * 60 * 1000;
-  const lastDuration = settings.scheduled.last * 60 * 1000;
-  const intervalDelay = settings.scheduled.interval * 60 * 1000;
-
-  // Set start countdown
-  countdown.value = afterDelay;
-  countdownTimer.value = window.setInterval(() => {
-    countdown.value = Math.max(0, countdown.value - 1000);
-    if (countdown.value === 0) {
-      clearInterval(countdownTimer.value);
-      countdownTimer.value = null;
-    }
-  }, 1000);
-
-  // Delay the first task
-  scheduledTaskTimer.value = window.setTimeout(() => {
-    runAndSchedule(lastDuration, intervalDelay);
-  }, afterDelay);
-}
-
-function runAndSchedule(lastDuration: number, intervalDelay: number) {
-  if (!settings.scheduled.enabled || !canBeStarted.value) {
-    state.started = false;
-    return;
-  }
-
-  // Start the task
-  state.started = true;
-  generationStartTime.value = Date.now();
-  startGeneration();
-
-  // Set pause countdown
-  pauseCountdown.value = lastDuration;
-  pauseCountdownTimer.value = window.setInterval(() => {
-    pauseCountdown.value = Math.max(0, pauseCountdown.value - 1000);
-  }, 1000);
-
-  // Schedule the stop and the next run
-  scheduledTaskTimer.value = window.setTimeout(() => {
-    state.started = false;
-    clearInterval(pauseCountdownTimer.value);
-    pauseCountdownTimer.value = null;
-    pauseCountdown.value = 0;
-
-    if (settings.scheduled.interval > 0) {
-      // Set resume countdown
-      resumeCountdown.value = intervalDelay;
-      resumeCountdownTimer.value = window.setInterval(() => {
-        resumeCountdown.value = Math.max(0, resumeCountdown.value - 1000);
-        if (resumeCountdown.value === 0) {
-          clearInterval(resumeCountdownTimer.value);
-          resumeCountdownTimer.value = null;
-        }
-      }, 1000);
-
-      // Schedule the next run
-      scheduledTaskTimer.value = window.setTimeout(() => {
-        runAndSchedule(lastDuration, intervalDelay);
-      }, intervalDelay);
-    } else {
-      scheduledTaskTimer.value = null;
-    }
-  }, lastDuration);
-}
-
-// Watch for changes in scheduled settings
-watch(
-  () => settings.scheduled.enabled,
-  (newVal) => {
-    if (!newVal) {
-      handleScheduledChange(false);
-    }
-  },
-);
+const startButtonText = computed(() => (state.started ? '暂停' : '开始'));
 
 function clearPolygon(polygon: Polygon) {
   Object.values(markerLayers).forEach((markerLayer) => {
@@ -1203,17 +964,6 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (scheduledTaskTimer.value !== null) {
-    clearTimeout(scheduledTaskTimer.value);
-    clearInterval(scheduledTaskTimer.value);
-    scheduledTaskTimer.value = null;
-  }
-  if (countdownTimer.value !== null) {
-    clearInterval(countdownTimer.value);
-    countdownTimer.value = null;
-  }
-  countdown.value = 0;
-
   // Clean up grid generators
   for (const generator of gridGenerators.values()) {
     generator.clearSavedState();
@@ -1241,42 +991,14 @@ async function startGeneration() {
 
   generationConcurrency.reset();
   state.started = true;
-  generationStartTime.value = Date.now();
   await start();
 }
 
 const handleClickStart = async () => {
   if (!state.started) {
-    if (settings.scheduled.enabled) {
-      // If there's a scheduled task, we either start it or resume it
-      if (scheduledTaskTimer.value === null) {
-        startScheduledTask();
-      }
-    } else {
-      await startGeneration();
-    }
+    await startGeneration();
   } else {
-    // Manually stopping the task
     state.started = false;
-    if (scheduledTaskTimer.value !== null) {
-      clearTimeout(scheduledTaskTimer.value);
-      scheduledTaskTimer.value = null;
-    }
-    if (countdownTimer.value !== null) {
-      clearInterval(countdownTimer.value);
-      countdownTimer.value = null;
-    }
-    if (pauseCountdownTimer.value !== null) {
-      clearInterval(pauseCountdownTimer.value);
-      pauseCountdownTimer.value = null;
-    }
-    if (resumeCountdownTimer.value !== null) {
-      clearInterval(resumeCountdownTimer.value);
-      resumeCountdownTimer.value = null;
-    }
-    countdown.value = 0;
-    pauseCountdown.value = 0;
-    resumeCountdown.value = 0;
   }
 };
 
@@ -1772,28 +1494,6 @@ function addLocation(
 
     addGlifyPoint(location, markerType, polygon._leaflet_id);
 
-    if (settings.notification.enabled && !imported) {
-      const elapsedTime = ((Date.now() - generationStartTime.value) / 1000).toFixed(1);
-      if (settings.notification.anyLocation && polygon.found.length === 1) {
-        sendNotifications(
-          '找到地点',
-          `在 ${getPolygonName(polygon.feature.properties)} 中找到第一个地点（${elapsedTime} 秒）`,
-        );
-      }
-      if (settings.notification.onePolygonComplete && polygon.found.length >= polygon.nbNeeded) {
-        sendNotifications(
-          '多边形已完成',
-          `${getPolygonName(polygon.feature.properties)} 已达到目标（${elapsedTime} 秒）`,
-        );
-      }
-
-      if (settings.notification.allPolygonsComplete) {
-        const allComplete = selected.value.every((p) => p.found.length >= p.nbNeeded);
-        if (allComplete) {
-          sendNotifications('生成完成', `所有多边形均已达到目标（${elapsedTime} 秒）`);
-        }
-      }
-    }
     if (addMarker && !settings.markers.glify) {
       const marker = L.marker([location.lat, location.lng], {
         icon: iconType,

@@ -5,21 +5,7 @@ import { getCurrentDate } from '@/composables/utils.ts'
 const { currentYear, currentDate } = getCurrentDate()
 
 const defaultSettings = {
-  notification: {
-    enabled: false,
-    anyLocation: false,
-    onePolygonComplete: false,
-    allPolygonsComplete: false,
-  },
-
   mapTheme: 'default',
-
-  scheduled: {
-    enabled: false,
-    last: 1,
-    after: 1,
-    interval: 1,
-  },
 
   coverage: {
     opacity: 1,
