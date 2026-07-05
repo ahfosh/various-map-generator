@@ -536,75 +536,6 @@
             </div>
           </div>
 
-          <Checkbox v-model="settings.findByTileColor.enabled">按瓦片颜色查找</Checkbox>
-          <div v-if="settings.findByTileColor.enabled" class="space-y-0.5 ml-6 pb-1">
-            <div class="flex justify-between items-center gap-2">
-              包含/排除：
-              <select v-model="settings.findByTileColor.filterType">
-                <option value="include">包含</option>
-                <option value="exclude">排除</option>
-              </select>
-            </div>
-            <div class="flex justify-between items-center gap-2">
-              瓦片提供方：
-              <select v-model="settings.findByTileColor.tileProvider">
-                <option value="gmaps">谷歌地图</option>
-                <option value="osm">OSM</option>
-              </select>
-            </div>
-
-            <div class="flex justify-between items-center gap-2">
-              瓦片缩放级别：
-              <span class="ml-auto">
-                {{ settings.findByTileColor.zoom }}
-              </span>
-              <input
-                type="range"
-                v-model.number="settings.findByTileColor.zoom"
-                min="13"
-                max="19"
-                step="1"
-                title="瓦片缩放级别"
-              />
-            </div>
-
-            <div class="flex justify-between items-center gap-2">
-              运算符：
-              <select v-model="settings.findByTileColor.operator">
-                <option value="OR">OR</option>
-                <option value="AND">AND</option>
-              </select>
-            </div>
-
-            <div
-              v-for="(tileColor, index) in settings.findByTileColor.tileColors[
-                settings.findByTileColor.tileProvider
-              ]"
-              :key="index"
-              :title="tileColor.label"
-              class="flex items-center gap-2"
-            >
-              <Checkbox v-model="tileColor.active" class="hover:brightness-100! truncate">
-                <span
-                  class="h-4 min-w-8"
-                  :style="{ backgroundColor: 'rgb(' + tileColor.colors[0] + ')' }"
-                />
-                <span class="truncate">{{ tileColor.label }}</span>
-              </Checkbox>
-              <div v-if="tileColor.threshold >= 0.01" class="flex items-center gap-2 ml-auto">
-                <span>{{ (tileColor.threshold * 100).toFixed(0) }}%</span>
-                <input
-                  type="range"
-                  v-model.number="tileColor.threshold"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  title="颜色占比阈值"
-                />
-              </div>
-            </div>
-          </div>
-
           <Checkbox v-model="settings.filterByLinksLength.enabled"> 按链接数量筛选 </Checkbox>
           <div v-if="settings.filterByLinksLength.enabled" class="ml-6">
             <label class="flex items-center justify-between">
@@ -822,7 +753,6 @@ import {
   type MarkerLayersTypes,
 } from '@/map';
 
-import { getTileColorPresence } from '@/composables/tileColorDetector';
 import {
   randomPointInPoly,
   GridGenerator,
@@ -1265,16 +1195,6 @@ async function isPanoGood(pano: StreetViewPanoramaData) {
   if (settings.getCurve) {
     const links = pano.links ?? [];
     if (!isAcceptableCurve(links, settings.minCurveAngle)) return false;
-  }
-
-  if (settings.findByTileColor.enabled) {
-    const latLng = pano.location.latLng;
-    if (!latLng) return false;
-    const anyMatch = await getTileColorPresence(
-      { lat: latLng.lat(), lng: latLng.lng() },
-      settings.findByTileColor,
-    );
-    if (!anyMatch) return false;
   }
 
   if (settings.rejectDateless && !pano.imageDate) return false;

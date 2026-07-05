@@ -16,7 +16,6 @@ import markerBlue from '@/assets/markers/marker-blue.png'
 import markerRed from '@/assets/markers/marker-red.png'
 
 import { ref } from 'vue'
-import { useStorage } from '@vueuse/core'
 import { settings } from '@/settings'
 import {
   isValidGeoJSON,
@@ -39,18 +38,11 @@ const petalMapsLayer = L.tileLayer(
 
 const baiduCoverageLayer = new BaiduLayer({ filter: 'hue-rotate(140deg) saturate(200%)' })
 
-const baseMaps = {
-  花瓣地图: petalMapsLayer,
-}
-
 const overlayMaps = {
   '百度街景（需要缩放级别 5 以上）': baiduCoverageLayer,
 }
 
-const allLayers = [
-  ...Object.values(baseMaps),
-  ...Object.values(overlayMaps)
-]
+const allLayers = [petalMapsLayer, ...Object.values(overlayMaps)]
 
 class PolygonHole extends L.Draw.Polygon {
   type: string = 'polygonHole';
@@ -143,15 +135,8 @@ async function initMap(el: string) {
   map.getPane('labelPane')!.style.zIndex = '300';
   map.getPane("panoramasPane")!.style.zIndex = '500';
 
-  const selectedBase = baseMaps[storedLayers.value.base] || petalMapsLayer
-  selectedBase.addTo(map)
-
-  storedLayers.value.overlays.forEach((name) => {
-    const layer = overlayMaps[name]
-    if (layer) map.addLayer(layer)
-  })
-
-  L.control.layers(baseMaps, overlayMaps, { position: 'bottomleft' }).addTo(map)
+  petalMapsLayer.addTo(map)
+  baiduCoverageLayer.addTo(map)
 
   for (const layer of availableLayers.value) {
     if (layer.visible) {
@@ -165,24 +150,6 @@ async function initMap(el: string) {
   })
 
   map.addControl(drawControl)
-
-  map.on('baselayerchange', (e) => {
-    const name = baseLayerToName.get(e.layer)
-    if (name) storedLayers.value.base = name as BaseMapName
-    toggleMapTheme(settings.mapTheme)
-  })
-  map.on('overlayadd', (e) => {
-    const name = overlayLayerToName.get(e.layer) as OverlayMapName
-    if (name && !storedLayers.value.overlays.includes(name)) {
-      storedLayers.value.overlays.push(name)
-    }
-  })
-  map.on('overlayremove', (e) => {
-    const name = overlayLayerToName.get(e.layer)
-    if (name) {
-      storedLayers.value.overlays = storedLayers.value.overlays.filter((n) => n !== name)
-    }
-  })
 
   map.on('draw:created', (e) => {
     const event = e as L.DrawEvents.Created
@@ -311,38 +278,6 @@ function selectPolygon(e: L.LeafletMouseEvent) {
 }
 
 const loadedLayers: Record<string, L.GeoJSON> = {}
-
-type BaseMapName = keyof typeof baseMaps
-type OverlayMapName = keyof typeof overlayMaps
-const LEGACY_LAYER_NAMES: Record<string, string> = {
-  Petal: '花瓣地图',
-  'Baidu Street View (requires zoom level 5+)': '百度街景（需要缩放级别 5 以上）',
-}
-
-const storedLayers = useStorage<{
-  base: BaseMapName
-  overlays: OverlayMapName[]
-}>('map_generator__layers', {
-  base: '花瓣地图',
-  overlays: ['百度街景（需要缩放级别 5 以上）'],
-})
-
-if (LEGACY_LAYER_NAMES[storedLayers.value.base]) {
-  storedLayers.value.base = LEGACY_LAYER_NAMES[storedLayers.value.base] as BaseMapName
-}
-storedLayers.value.overlays = storedLayers.value.overlays.map(
-  (name) => (LEGACY_LAYER_NAMES[name] ?? name) as OverlayMapName,
-)
-
-const baseLayerToName = new Map<L.Layer, string>()
-for (const [name, layer] of Object.entries(baseMaps)) {
-  baseLayerToName.set(layer, name)
-}
-
-const overlayLayerToName = new Map<L.Layer, string>()
-for (const [name, layer] of Object.entries(overlayMaps)) {
-  overlayLayerToName.set(layer, name)
-}
 
 type MarkerLayersTypes = 'gen4' | 'newRoad'
 const markerLayers: Record<MarkerLayersTypes, L.MarkerClusterGroup> = {

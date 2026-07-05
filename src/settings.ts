@@ -50,27 +50,6 @@ const defaultSettings = {
     range: [0, 1439],
   },
 
-  findByTileColor: {
-    enabled: false,
-    zoom: 19,
-    filterType: 'include',
-    operator: 'OR',
-    tileProvider: 'gmaps',
-    tileColors: {
-      gmaps: [
-        {
-          label: '道路、街道',
-          active: false,
-          threshold: 0.05,
-          colors: ['170,185,201', '193,204,216', '186,201,215'],
-        },
-      ],
-      osm: [
-        { label: '白色道路', active: false, threshold: 0.05, colors: ['255,255,255'] },
-      ],
-    },
-  } as TileColorConfig,
-
   filterByLinksLength: {
     enabled: false,
     range: [1, 5],

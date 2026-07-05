@@ -45,25 +45,6 @@ interface Panorama {
   }
 }
 
-type TileOperators = 'AND' | 'OR'
-type TileProvider = 'osm' | 'gmaps'
-
-interface TileColor {
-  label: string
-  active: boolean
-  threshold: number
-  colors: string[]
-}
-
-interface TileColorConfig {
-  enabled: boolean
-  zoom: number
-  filterType: 'include' | 'exclude'
-  operator: TileOperators
-  tileProvider: TileProvider
-  tileColors: Record<TileProvider, TileColor[]>
-}
-
 interface SearchInDescriptionConfig {
   enabled: boolean
   searchTerms: string
