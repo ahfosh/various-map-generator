@@ -1,6 +1,8 @@
 import { reactive } from 'vue'
 import { useStorage } from '@vueuse/core'
 import { getCurrentDate } from '@/composables/utils.ts'
+import { applyUaGeneratorProfile } from '@/composables/uaProfile'
+import type { UaProfileTier } from '@/composables/uaProfile'
 
 const { currentYear, currentDate } = getCurrentDate()
 
@@ -89,6 +91,10 @@ const defaultSettings = {
   checkImports: false,
   useUpdateTypeIconsOnImport: false,
   importedMarkersOpacity: 1.0,
+
+  autoUaTune: true,
+  uaProfileTier: null as UaProfileTier | null,
+  uaProfileLabel: null as string | null,
 }
 
 const CURRENT_KEYS = Object.keys(localStorage)
@@ -107,5 +113,9 @@ const storedSettings = useStorage(CURRENT_KEY, defaultSettings)
 const settings = reactive(storedSettings.value)
 settings.toDate = currentDate
 settings.toYear = currentYear
+
+if (settings.autoUaTune !== false) {
+  applyUaGeneratorProfile(settings)
+}
 
 export { settings }

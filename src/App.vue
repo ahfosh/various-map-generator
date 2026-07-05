@@ -269,6 +269,13 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
         <Collapsible :is-open="panels.generatorSettings" class="settings-panel-content pr-1">
+          <Checkbox v-model="settings.autoUaTune" @change="handleAutoUaTuneChange">
+            根据设备自动调整生成器
+          </Checkbox>
+          <div v-if="settings.uaProfileLabel" class="ml-6 text-xs opacity-80">
+            当前设备：{{ settings.uaProfileLabel }}
+          </div>
+
           <div class="flex items-center justify-between">
             全景 ID：
             <select v-model="settings.panoId" class="w-24 ml-10">
@@ -761,6 +768,7 @@ import {
   normalizeImportedPanorama,
   normalizeUpdateType,
 } from '@/composables/baiduPanorama';
+import { applyUaGeneratorProfile } from '@/composables/uaProfile';
 import {
   randomPointInPoly,
   GridGenerator,
@@ -927,6 +935,14 @@ function handleGlifyToggle() {
     settings.markers.cluster = false;
   }
   setGlifyMode(settings.markers.glify);
+}
+
+function handleAutoUaTuneChange() {
+  if (settings.autoUaTune === false) return;
+
+  applyUaGeneratorProfile(settings);
+  setGlifyMode(settings.markers.glify);
+  updateClusters();
 }
 
 // Handle cluster toggle

@@ -1,17 +1,38 @@
+export interface AdaptiveConcurrencyOptions {
+  initialChunkSize?: number
+  minChunkSize?: number
+  maxChunkSize?: number
+}
+
 export class AdaptiveConcurrency {
   private chunkSize: number
   private consecutiveErrors = 0
   private consecutiveSuccesses = 0
+  private initialChunkSize: number
+  private readonly minChunkSize: number
+  private maxChunkSize: number
+  private readonly decreaseFactor = 0.65
+  private readonly increaseStep = 5
+  private readonly successThreshold = 20
 
-  constructor(
-    private readonly initialChunkSize = 75,
-    private readonly minChunkSize = 5,
-    private readonly maxChunkSize = 150,
-    private readonly decreaseFactor = 0.65,
-    private readonly increaseStep = 5,
-    private readonly successThreshold = 20,
-  ) {
-    this.chunkSize = initialChunkSize
+  constructor(options: AdaptiveConcurrencyOptions = {}) {
+    this.initialChunkSize = options.initialChunkSize ?? 75
+    this.minChunkSize = options.minChunkSize ?? 5
+    this.maxChunkSize = options.maxChunkSize ?? 150
+    this.chunkSize = this.initialChunkSize
+  }
+
+  configure(options: AdaptiveConcurrencyOptions) {
+    if (options.initialChunkSize != null) {
+      this.initialChunkSize = options.initialChunkSize
+      this.chunkSize = options.initialChunkSize
+    }
+    if (options.maxChunkSize != null) {
+      this.maxChunkSize = options.maxChunkSize
+      this.chunkSize = Math.min(this.chunkSize, this.maxChunkSize)
+    }
+    this.consecutiveErrors = 0
+    this.consecutiveSuccesses = 0
   }
 
   getChunkSize(): number {
@@ -64,8 +85,16 @@ type QueueTask<T> = {
 export class RequestQueue {
   private running = 0
   private queue: QueueTask<unknown>[] = []
+  private maxConcurrent: number
 
-  constructor(private readonly maxConcurrent = 40) {}
+  constructor(maxConcurrent = 40) {
+    this.maxConcurrent = maxConcurrent
+  }
+
+  setMaxConcurrent(maxConcurrent: number) {
+    this.maxConcurrent = Math.max(1, maxConcurrent)
+    this.drain()
+  }
 
   run<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
@@ -90,3 +119,11 @@ export class RequestQueue {
 }
 
 export const panoRequestQueue = new RequestQueue()
+
+export function configurePanoRequestQueue(maxConcurrent: number) {
+  panoRequestQueue.setMaxConcurrent(maxConcurrent)
+}
+
+export function configureGenerationConcurrency(options: AdaptiveConcurrencyOptions) {
+  generationConcurrency.configure(options)
+}
