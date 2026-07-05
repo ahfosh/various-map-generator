@@ -563,6 +563,8 @@ function addGlifyPoint(location: Panorama, type: MarkerLayersTypes, polygonId: n
   }
 }
 
+const IMPORTED_LOCATIONS_POLYGON_ID = 0
+
 function removeGlifyPointsForPolygon(polygonId: number) {
   const beforeCount = glifyPoints.length
   glifyPoints = glifyPoints.filter(p => p.polygonId !== polygonId)
@@ -573,6 +575,20 @@ function removeGlifyPointsForPolygon(polygonId: number) {
       refreshGlifyLayer()
     }
   }
+}
+
+function removeGlifyPointByPanoId(panoId: string) {
+  const beforeCount = glifyPoints.length
+  glifyPoints = glifyPoints.filter((p) => p.panoId !== panoId)
+  pendingNewPoints = pendingNewPoints.filter((p) => p.panoId !== panoId)
+
+  if (beforeCount !== glifyPoints.length && glifyEnabled) {
+    refreshGlifyLayer()
+  }
+}
+
+function removeGlifyPointsForImported() {
+  removeGlifyPointsForPolygon(IMPORTED_LOCATIONS_POLYGON_ID)
 }
 
 function clearGlifyPoints() {
@@ -980,5 +996,8 @@ export {
   addGlifyPoint,
   registerGlifyClickHandler,
   removeGlifyPointsForPolygon,
+  removeGlifyPointByPanoId,
+  removeGlifyPointsForImported,
+  IMPORTED_LOCATIONS_POLYGON_ID,
   type MarkerLayersTypes,
 }

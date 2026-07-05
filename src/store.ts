@@ -2,6 +2,8 @@ import { ref, reactive } from 'vue'
 
 const selected = ref<Polygon[]>([])
 
+const importedLocations = ref<Panorama[]>([])
+
 const select = ref('选择中国区域或绘制多边形')
 
 const state = reactive({
@@ -9,5 +11,5 @@ const state = reactive({
 })
 
 export function useStore() {
-  return { selected, select, state }
+  return { selected, importedLocations, select, state }
 }

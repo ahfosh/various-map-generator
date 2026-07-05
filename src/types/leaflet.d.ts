@@ -14,7 +14,8 @@ declare module 'leaflet' {
   }
 
   interface Marker {
-    polygonID: number
+    polygonID?: number
+    imported?: boolean
   }
 
   interface MarkerClusterGroup {

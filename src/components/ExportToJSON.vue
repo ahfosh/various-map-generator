@@ -10,25 +10,32 @@ import FileExportIcon from '@/assets/icons/file-export.svg'
 
 const props = defineProps<{
   data: Polygon[]
+  imported?: Panorama[]
   disabled?: boolean
   mode?: string
   tag?: boolean
 }>()
 
+function formatLocation(item: Panorama): Panorama {
+  return {
+    ...item,
+    panoId:
+      props.mode === 'disable' ? null : props.mode === 'prefix' ? `BAIDU:${item.panoId}` : item.panoId,
+    links: item.links?.slice(0, 4),
+    extra: {
+      tags: props.tag ? item.extra?.tags! : [],
+    },
+  }
+}
+
 function handleExport() {
   let data: Panorama[] = []
   props.data.forEach((polygon) => {
-    const updated = polygon.found.map((item) => ({
-      ...item,
-      panoId: props.mode === 'disable' ? null :
-        props.mode === 'prefix' ? `BAIDU:${item.panoId}` : item.panoId,
-      links:item.links?.slice(0, 4),
-      extra:{
-        tags: props.tag ? item.extra?.tags! : [],
-      }
-    }))
-    data = data.concat(updated)
+    data = data.concat(polygon.found.map(formatLocation))
   })
+  if (props.imported?.length) {
+    data = data.concat(props.imported.map(formatLocation))
+  }
   const dataUri =
     'data:application/json;charset=utf-8,' +
     encodeURIComponent(JSON.stringify({ customCoordinates: data }))

@@ -105,51 +105,9 @@
 
       <div v-if="selected.length" class="settings-panel">
         <h2>中国区域（{{ selected.length }}）</h2>
-        <div class="px-1">
-          <Checkbox v-model="settings.markersOnImport" title="可能影响性能。">
-            为导入的地点添加标记
-          </Checkbox>
-          <div v-if="settings.markersOnImport" class="ml-4">
-            <label class="text-s"
-              >标记透明度：{{ Math.round((settings.importedMarkersOpacity ?? 1.0) * 100) }}%</label
-            >
-            <Slider
-              v-model="settings.importedMarkersOpacity"
-              @input="updateImportedMarkersOpacity"
-              :value="settings.importedMarkersOpacity ?? 1.0"
-              :max="1.0"
-              :step="0.01"
-              :tooltips="false"
-              :lazy="false"
-              class="mt-1 w-full max-w-48"
-            />
-            <Checkbox
-              v-model="settings.useUpdateTypeIconsOnImport"
-              title="根据更新类型使用相应图标。"
-              class="mt-2"
-            >
-              根据更新类型使用图标
-            </Checkbox>
-          </div>
-          <Checkbox v-model="settings.checkImports" title="在导入地点周围搜索更多全景图。">
-            检查导入的地点
-          </Checkbox>
-          <hr />
-        </div>
 
         <div class="polygon-list settings-panel-content--scroll">
           <div v-for="polygon of selected" :key="polygon._leaflet_id" class="polygon-item">
-            <Button size="sm" squared title="导入地点">
-              <label class="cursor-pointer">
-                <input
-                  type="file"
-                  accept=".json"
-                  hidden
-                  @change="importLocations($event, polygon as Polygon)"
-                />
-                <FileImportIcon class="w-5 h-5" />
-              </label>
-            </Button>
             <span
               v-if="polygon.feature.properties.code"
               :class="`flag-icon flag-` + getFlagCountryCode(polygon.feature.properties.code)"
@@ -200,6 +158,61 @@
     </div>
 
     <div class="container shrink-0">
+      <div class="settings-panel px-1 py-1">
+        <div class="flex items-center gap-2">
+          <h2>导入地点（{{ importedLocations.length }}）</h2>
+          <Button size="sm" squared title="导入 JSON 地点" class="ml-auto">
+            <label class="cursor-pointer">
+              <input
+                type="file"
+                accept=".json,application/json"
+                hidden
+                @change="importLocations"
+              />
+              <FileImportIcon class="w-5 h-5" />
+            </label>
+          </Button>
+          <Button
+            size="sm"
+            squared
+            variant="danger"
+            :disabled="!importedLocations.length"
+            title="删除所有导入的地点"
+            @click="clearImportedLocations"
+          >
+            <TrashBinIcon class="w-5 h-5" />
+          </Button>
+        </div>
+        <Checkbox v-model="settings.markersOnImport" title="可能影响性能。">
+          为导入的地点添加标记
+        </Checkbox>
+        <div v-if="settings.markersOnImport" class="ml-4">
+          <label class="text-s"
+            >标记透明度：{{ Math.round((settings.importedMarkersOpacity ?? 1.0) * 100) }}%</label
+          >
+          <Slider
+            v-model="settings.importedMarkersOpacity"
+            @input="updateImportedMarkersOpacity"
+            :value="settings.importedMarkersOpacity ?? 1.0"
+            :max="1.0"
+            :step="0.01"
+            :tooltips="false"
+            :lazy="false"
+            class="mt-1 w-full max-w-48"
+          />
+          <Checkbox
+            v-model="settings.useUpdateTypeIconsOnImport"
+            title="根据更新类型使用相应图标。"
+            class="mt-2"
+          >
+            根据更新类型使用图标
+          </Checkbox>
+        </div>
+        <Checkbox v-model="settings.checkImports" title="在导入地点周围搜索更多全景图。">
+          检查导入的地点
+        </Checkbox>
+      </div>
+
       <div class="flex items-center gap-2 p-1">
         <h2>导出全部（{{ totalLocs }}）</h2>
         <Button
@@ -213,17 +226,23 @@
         <div class="flex gap-1">
           <Clipboard
             :data="selected as Polygon[]"
+            :imported="importedLocations"
             :disabled="!totalLocs"
             :mode="settings.panoId"
             :tag="settings.tag"
           />
           <ExportToJSON
             :data="selected as Polygon[]"
+            :imported="importedLocations"
             :disabled="!totalLocs"
             :mode="settings.panoId"
             :tag="settings.tag"
           />
-          <ExportToCSV :data="selected as Polygon[]" :disabled="!totalLocs" />
+          <ExportToCSV
+            :data="selected as Polygon[]"
+            :imported="importedLocations"
+            :disabled="!totalLocs"
+          />
           <Button
             size="sm"
             squared
@@ -796,6 +815,9 @@ import {
   addGlifyPoint,
   registerGlifyClickHandler,
   removeGlifyPointsForPolygon,
+  removeGlifyPointByPanoId,
+  removeGlifyPointsForImported,
+  IMPORTED_LOCATIONS_POLYGON_ID,
   type LayerMeta,
   type MarkerLayersTypes,
 } from '@/map';
@@ -839,7 +861,8 @@ const panels = useStorage('map_generator__panels_v2', {
   marker: false,
 });
 
-const { selected, select, state } = useStore();
+const { selected, importedLocations, select, state } = useStore();
+const importCheckedPanos = new Set<string>();
 const allFoundPanoIds = new Set<string>();
 
 // Grid generators cache - persist across pause/resume
@@ -878,8 +901,10 @@ function getCachedDates() {
 const canBeStarted = computed(() =>
   selected.value.some((country) => country.found.length < country.nbNeeded),
 );
-const totalLocs = computed(() =>
-  selected.value.reduce((sum, country) => sum + country.found.length, 0),
+const totalLocs = computed(
+  () =>
+    selected.value.reduce((sum, country) => sum + country.found.length, 0) +
+    importedLocations.value.length,
 );
 
 const startButtonText = computed(() => (state.started ? '暂停' : '开始'));
@@ -909,6 +934,26 @@ function clearPolygon(polygon: Polygon) {
   }
 }
 
+function clearImportedLocations() {
+  Object.values(markerLayers).forEach((markerLayer) => {
+    const toRemove = markerLayer.getLayers().filter((layer) => {
+      const marker = layer as L.Marker;
+      return marker.imported;
+    });
+    toRemove.forEach((marker) => {
+      markerLayer.removeLayer(marker);
+    });
+  });
+
+  for (const location of importedLocations.value) {
+    allFoundPanoIds.delete(location.panoId);
+  }
+
+  importedLocations.value = [];
+  importCheckedPanos.clear();
+  removeGlifyPointsForImported();
+}
+
 function clearAllLocations() {
   for (const polygon of selected.value) {
     polygon.found.length = 0;
@@ -921,6 +966,8 @@ function clearAllLocations() {
       gridGenerators.delete(polygon._leaflet_id);
     }
   }
+  clearImportedLocations();
+  allFoundPanoIds.clear();
   clearMarkers();
 }
 
@@ -1469,13 +1516,67 @@ function updateImportedMarkersOpacity(value) {
   });
 }
 
+function removeImportedLocation(location: Panorama) {
+  const index = importedLocations.value.findIndex((item) => item.panoId === location.panoId);
+  if (index === -1) return;
+
+  importedLocations.value.splice(index, 1);
+  allFoundPanoIds.delete(location.panoId);
+  removeGlifyPointByPanoId(location.panoId);
+}
+
+function addImportedLocation(
+  location: Panorama,
+  iconType: L.Icon,
+  addMarker: boolean = true,
+  opacity: number = 1.0,
+) {
+  if (allFoundPanoIds.has(location.panoId)) return;
+  allFoundPanoIds.add(location.panoId);
+
+  let markerLayer = markerLayers['gen4'];
+  let markerType: MarkerLayersTypes = 'gen4';
+  let zIndex = 1;
+  if (iconType === icons.newLoc) {
+    markerLayer = markerLayers['newRoad'];
+    markerType = 'newRoad';
+    zIndex = 2;
+  }
+
+  importedLocations.value.push(location);
+  addGlifyPoint(location, markerType, IMPORTED_LOCATIONS_POLYGON_ID);
+
+  if (addMarker && !settings.markers.glify) {
+    const marker = L.marker([location.lat, location.lng], {
+      icon: iconType,
+      forceZIndex: zIndex,
+      opacity: opacity,
+      contextmenu: true,
+      contextmenuItems: [
+        {
+          text: '移除标记',
+          callback: () => {
+            markerLayer.removeLayer(marker);
+            removeImportedLocation(location);
+          },
+        },
+      ],
+    })
+      .on('click', () => {
+        openPanorama(location);
+      })
+      .setZIndexOffset(zIndex)
+      .addTo(markerLayer);
+    marker.imported = true;
+  }
+}
+
 function addLocation(
   location: Panorama,
   polygon: Polygon,
   iconType: L.Icon,
   addMarker: boolean = true,
   opacity: number = 1.0,
-  imported: boolean = false,
 ) {
   if (allFoundPanoIds.has(location.panoId)) return;
   allFoundPanoIds.add(location.panoId);
@@ -1515,54 +1616,199 @@ function addLocation(
         .setZIndexOffset(zIndex)
         .addTo(markerLayer);
       marker.polygonID = polygon._leaflet_id;
-      marker.imported = imported;
     }
   }
 }
 
-async function importLocations(e: Event, polygon: Polygon) {
+function addImportedFromPano(pano: StreetViewPanoramaData) {
+  let heading = 0;
+  if (settings.heading.adjust) {
+    if (settings.heading.reference === 'forward') {
+      heading = pano.tiles.centerHeading;
+    } else if (settings.heading.reference === 'backward') {
+      heading = (pano.tiles.centerHeading + 180) % 360;
+    } else if (settings.heading.reference === 'link') {
+      heading =
+        pano.links.length > 0
+          ? (pano.links[0].heading ?? pano.tiles.centerHeading)
+          : pano.tiles.centerHeading;
+    }
+    if (settings.heading.randomInRange) {
+      heading += randomInRange(settings.heading.range[0], settings.heading.range[1]);
+    } else {
+      heading += Math.random() < 0.5 ? settings.heading.range[0] : settings.heading.range[1];
+    }
+  }
+
+  let pitch = 0;
+  if (settings.pitch.adjust) {
+    pitch = settings.pitch.randomInRange
+      ? randomInRange(settings.pitch.range[0], settings.pitch.range[1])
+      : Math.random() < 0.5
+        ? settings.pitch.range[0]
+        : settings.pitch.range[1];
+  }
+
+  let zoom = 0;
+  if (settings.zoom.adjust) {
+    zoom = settings.zoom.randomInRange
+      ? randomInRange(settings.zoom.range[0], settings.zoom.range[1])
+      : Math.random() < 0.5
+        ? settings.zoom.range[0]
+        : settings.zoom.range[1];
+  }
+
+  const location: Panorama = {
+    panoId: pano.location.pano,
+    lat: pano.location.latLng.lat(),
+    lng: pano.location.latLng.lng(),
+    heading,
+    pitch,
+    zoom,
+    country: pano.location.country,
+    region: pano.location.region,
+    locality: pano.location.locality,
+    road: pano.location.road,
+    imageDate: pano.imageDate,
+    source: 'baidu_pano',
+    links: [
+      ...new Set(
+        pano.links.map((loc) => loc.pano).concat((pano.time ?? []).map((loc) => loc.pano)),
+      ),
+    ].sort(),
+    extra: {
+      tags: ['baidu'],
+    },
+  };
+
+  const icon = icons.gen4;
+  addImportedLocation(
+    location,
+    icon,
+    settings.markersOnImport,
+    settings.importedMarkersOpacity ?? 1.0,
+  );
+}
+
+function getPanoForImport(id: string) {
+  return getPanoForImportDeep(id, 0);
+}
+
+function getPanoForImportDeep(id: string, depth: number) {
+  if (depth > settings.linksDepth) return;
+  if (importCheckedPanos.has(id)) return;
+  importCheckedPanos.add(id);
+
+  StreetViewProviders.getPanorama({ pano: id }, async (pano, status) => {
+    if (status == StreetViewStatus.UNKNOWN_ERROR) {
+      importCheckedPanos.delete(id);
+      generationConcurrency.recordError();
+      const delay = generationConcurrency.getBackoffMs();
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+      return getPanoForImportDeep(id, depth);
+    }
+    if (status != StreetViewStatus.OK || !pano?.location) {
+      generationConcurrency.recordSuccess();
+      return;
+    }
+    generationConcurrency.recordSuccess();
+
+    const lat = pano.location.latLng.lat();
+    const lng = pano.location.latLng.lng();
+    const isPanoGoodAndInChina = (await isPanoGood(pano)) && isInChina(lng, lat);
+
+    if (settings.checkAllDates && !settings.selectMonths && pano.time) {
+      const { fromDate, toDate } = getCachedDates();
+
+      for (const loc of pano.time) {
+        const date = findDateInObject(loc);
+        const iDate = parseDate(date);
+        if (iDate >= fromDate && iDate <= toDate) {
+          getPanoForImportDeep(
+            loc.pano,
+            isPanoGoodAndInChina ? 1 : depth + 1,
+          );
+        }
+      }
+    }
+    if (settings.checkLinks) {
+      if (pano.links) {
+        for (const loc of pano.links) {
+          getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
+        }
+      }
+      if (pano.time) {
+        for (const loc of pano.time) {
+          getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
+        }
+      }
+    }
+    if (isPanoGoodAndInChina) {
+      addImportedFromPano(pano);
+    }
+  });
+}
+
+function isJsonFile(file: File) {
+  return file.type === 'application/json' || file.name.toLowerCase().endsWith('.json');
+}
+
+async function importLocations(e: Event) {
   const input = e.target as HTMLInputElement;
   if (!input.files) return;
 
   for (const file of input.files) {
-    const result = await readFileAsText(file);
-    if (file.type == 'application/json') {
-      let JSONResult;
-      try {
-        JSONResult = JSON.parse(result);
-        if (!JSONResult.customCoordinates) {
-          throw Error;
-        }
-      } catch (e) {
-        alert('JSON 无效。');
-        console.error(e);
-      }
+    if (!isJsonFile(file)) {
+      alert('未知文件类型：' + file.type + '。仅支持导入 JSON。');
+      continue;
+    }
 
-      for (const location of JSONResult.customCoordinates) {
-        if (!location.panoId || !location.lat || !location.lng) continue;
-        if (settings.checkImports) {
-          for (const link of location.links) {
-            if (!JSONResult.customCoordinates.some((loc: Panorama) => loc.panoId === link))
-              getPano(link, polygon);
+    const result = await readFileAsText(file);
+    let JSONResult: { customCoordinates?: Panorama[] };
+    try {
+      JSONResult = JSON.parse(result);
+      if (!JSONResult.customCoordinates) {
+        throw new Error('missing customCoordinates');
+      }
+    } catch (err) {
+      alert('JSON 无效。');
+      console.error(err);
+      continue;
+    }
+
+    const importedPanoIds = new Set(
+      JSONResult.customCoordinates
+        .map((location) => location.panoId)
+        .filter(Boolean) as string[],
+    );
+
+    for (const location of JSONResult.customCoordinates) {
+      if (!location.panoId || location.lat == null || location.lng == null) continue;
+
+      if (settings.checkImports && location.links) {
+        for (const link of location.links) {
+          if (!importedPanoIds.has(link)) {
+            getPanoForImport(link);
           }
         }
-        const icon =
-          settings.useUpdateTypeIconsOnImport && location.update_type
-            ? getIconForUpdateType(location.update_type)
-            : icons.gen4;
-        addLocation(
-          location,
-          polygon,
-          icon,
-          settings.markersOnImport,
-          settings.importedMarkersOpacity ?? 1.0,
-          true,
-        );
       }
-    } else {
-      alert('未知文件类型：' + file.type + '。仅支持导入 JSON。');
+
+      const icon =
+        settings.useUpdateTypeIconsOnImport && location.update_type
+          ? getIconForUpdateType(location.update_type)
+          : icons.gen4;
+      addImportedLocation(
+        location,
+        icon,
+        settings.markersOnImport,
+        settings.importedMarkersOpacity ?? 1.0,
+      );
     }
   }
+
+  input.value = '';
 }
 
 async function changeLocationsCap() {
