@@ -43,6 +43,7 @@ export interface StreetViewLocation {
   shortDescription?: string | null
   [key: string]: unknown
   altitude?: number | null
+  pitch?: number | null
   country?: string | null
   region?: string | null
   locality?: string | null

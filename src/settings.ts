@@ -74,9 +74,9 @@ const defaultSettings = {
     range: [0, 0],
     randomInRange: false,
   },
-  zoom: {
+  fov: {
     adjust: false,
-    range: [0, 0],
+    range: [90, 90],
     randomInRange: false,
   },
   markers: {
@@ -92,7 +92,7 @@ const defaultSettings = {
 }
 
 const CURRENT_KEYS = Object.keys(localStorage)
-const CURRENT_KEY = 'map_generator__settings_v11'
+const CURRENT_KEY = 'map_generator__settings_v12'
 
 CURRENT_KEYS.forEach((key: string) => {
   if (

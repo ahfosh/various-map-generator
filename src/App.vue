@@ -360,7 +360,7 @@
           <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
 
           <Checkbox v-model="settings.rejectNoDescription"> 拒绝无描述的地点 </Checkbox>
-          <Checkbox v-model="settings.rejectRoadName"> 拒绝有道路名称的地点 </Checkbox>
+          <Checkbox v-model="settings.rejectRoadName"> 拒绝有路名的地点 </Checkbox>
 
           <Checkbox
             v-model="settings.onlyOneInTimeframe"
@@ -542,9 +542,9 @@
               <div class="flex items-center gap-1 relative">
                 范围
                 <Tooltip>
-                  0：球形全景/孤立点<br />
-                  1：一个箭头（死胡同）<br />
-                  &gt; 2：交叉路口
+                  0：无邻接全景<br />
+                  1：单条道路延伸<br />
+                  &gt; 2：多向路口
                 </Tooltip>
               </div>
               <Slider
@@ -607,7 +607,7 @@
                 class="w-32 pr-2"
               />
             </label>
-            <small>0° 将直接指向道路方向。</small>
+            <small>0° 将直接指向邻接道路方向（DIR）。</small>
             <Checkbox v-model="settings.heading.randomInRange">范围内随机</Checkbox>
           </div>
 
@@ -616,32 +616,34 @@
             <Slider
               v-if="settings.pitch.adjust"
               v-model="settings.pitch.range"
-              :min="-90"
+              :min="0"
               :max="90"
+              :step="1"
               tooltipPosition="bottom"
               class="w-32 pr-2"
             />
           </div>
           <div v-if="settings.pitch.adjust" class="ml-6">
-            <small>默认 0°。-90° 指向地面，+90° 指向天空</small>
+            <small>未调整时使用百度返回的默认俯仰角；可调范围 0°–90°</small>
             <Checkbox v-model="settings.pitch.randomInRange">范围内随机</Checkbox>
           </div>
 
           <div class="flex items-center justify-between">
-            <Checkbox v-model="settings.zoom.adjust">设置缩放</Checkbox>
+            <Checkbox v-model="settings.fov.adjust">设置视野（FOV）</Checkbox>
             <Slider
-              v-if="settings.zoom.adjust"
-              v-model="settings.zoom.range"
-              :min="0"
-              :max="4"
-              :step="-1"
+              v-if="settings.fov.adjust"
+              v-model="settings.fov.range"
+              :min="10"
+              :max="120"
+              :step="5"
               tooltipPosition="bottom"
               class="w-32 pr-2"
             />
           </div>
-          <Checkbox v-if="settings.zoom.adjust" v-model="settings.zoom.randomInRange" class="ml-6"
-            >范围内随机
-          </Checkbox>
+          <div v-if="settings.fov.adjust" class="ml-6">
+            <small>百度街景默认 90°；数值越小视野越窄（接近放大）</small>
+            <Checkbox v-model="settings.fov.randomInRange">范围内随机</Checkbox>
+          </div>
         </Collapsible>
       </div>
 
@@ -754,6 +756,12 @@ import {
 } from '@/map';
 
 import {
+  BAIDU_UPDATE_TYPES,
+  buildPanoramaRecord,
+  normalizeImportedPanorama,
+  normalizeUpdateType,
+} from '@/composables/baiduPanorama';
+import {
   randomPointInPoly,
   GridGenerator,
   resetPolygonSearchState,
@@ -763,7 +771,6 @@ import {
   getCurrentDate,
   parseDate,
   extractMonthYear,
-  randomInRange,
   distanceBetween,
   readFileAsText,
   getPolygonName,
@@ -1171,7 +1178,7 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
 async function isPanoGood(pano: StreetViewPanoramaData) {
   if (!pano.location) return false;
 
-  if (settings.rejectRoadName && pano.location.road) return false;
+  if (settings.rejectRoadName && (pano.location.road || pano.location.description)) return false;
   if (settings.rejectNoDescription && !hasAnyDescription(pano.location)) return false;
 
   if (settings.filterByLinksLength.enabled) {
@@ -1342,84 +1349,30 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
 }
 
 function addLoc(pano: StreetViewPanoramaData, polygon: Polygon) {
-  let heading = 0;
-  if (settings.heading.adjust) {
-    if (settings.heading.reference === 'forward') {
-      heading = pano.tiles.centerHeading;
-    } else if (settings.heading.reference === 'backward') {
-      heading = (pano.tiles.centerHeading + 180) % 360;
-    } else if (settings.heading.reference === 'link') {
-      heading =
-        pano.links.length > 0
-          ? (pano.links[0].heading ?? pano.tiles.centerHeading)
-          : pano.tiles.centerHeading;
-    }
-    if (settings.heading.randomInRange) {
-      heading += randomInRange(settings.heading.range[0], settings.heading.range[1]);
-    } else {
-      heading += Math.random() < 0.5 ? settings.heading.range[0] : settings.heading.range[1];
-    }
+  const location = buildPanoramaRecord(pano, settings);
+  if (pano.location.altitude != null) {
+    location.altitude = pano.location.altitude;
   }
-
-  let pitch = 0;
-  if (settings.pitch.adjust) {
-    pitch = settings.pitch.randomInRange
-      ? randomInRange(settings.pitch.range[0], settings.pitch.range[1])
-      : Math.random() < 0.5
-        ? settings.pitch.range[0]
-        : settings.pitch.range[1];
-  }
-
-  let zoom = 0;
-  if (settings.zoom.adjust) {
-    zoom = settings.zoom.randomInRange
-      ? randomInRange(settings.zoom.range[0], settings.zoom.range[1])
-      : Math.random() < 0.5
-        ? settings.zoom.range[0]
-        : settings.zoom.range[1];
-  }
-
-  const location: Panorama = {
-    panoId: pano.location.pano,
-    lat: pano.location.latLng.lat(),
-    lng: pano.location.latLng.lng(),
-    heading,
-    pitch,
-    zoom,
-    country: pano.location.country,
-    region: pano.location.region,
-    locality: pano.location.locality,
-    road: pano.location.road,
-    imageDate: pano.imageDate,
-    source: 'baidu_pano',
-    links: [
-      ...new Set(
-        pano.links.map((loc) => loc.pano).concat((pano.time ?? []).map((loc) => loc.pano)),
-      ),
-    ].sort(),
-    extra: {
-      tags: ['baidu'],
-    },
-  };
 
   const index = location.links.indexOf(pano.location.pano);
   if (index != -1) location.links.splice(index, 1);
 
   const previousPano = pano.time?.[pano.time.length - 2]?.pano;
   if (!previousPano) {
-    location.update_type = 'newroad';
+    location.update_type = BAIDU_UPDATE_TYPES.newRoad;
     location.extra.tags.push(location.update_type);
     return addLocation(location, polygon, icons.newLoc);
   }
 
-  location.update_type = 'gen4update';
+  location.update_type = BAIDU_UPDATE_TYPES.update;
   location.extra.tags.push(location.update_type);
   return addLocation(location, polygon, icons.gen4);
 }
 
 function getIconForUpdateType(updateType: string): L.Icon {
-  switch (updateType) {
-    case 'newroad':
+  const normalized = normalizeUpdateType(updateType);
+  switch (normalized) {
+    case BAIDU_UPDATE_TYPES.newRoad:
       return icons.newLoc;
     default:
       return icons.gen4;
@@ -1541,65 +1494,10 @@ function addLocation(
 }
 
 function addImportedFromPano(pano: StreetViewPanoramaData) {
-  let heading = 0;
-  if (settings.heading.adjust) {
-    if (settings.heading.reference === 'forward') {
-      heading = pano.tiles.centerHeading;
-    } else if (settings.heading.reference === 'backward') {
-      heading = (pano.tiles.centerHeading + 180) % 360;
-    } else if (settings.heading.reference === 'link') {
-      heading =
-        pano.links.length > 0
-          ? (pano.links[0].heading ?? pano.tiles.centerHeading)
-          : pano.tiles.centerHeading;
-    }
-    if (settings.heading.randomInRange) {
-      heading += randomInRange(settings.heading.range[0], settings.heading.range[1]);
-    } else {
-      heading += Math.random() < 0.5 ? settings.heading.range[0] : settings.heading.range[1];
-    }
+  const location = buildPanoramaRecord(pano, settings);
+  if (pano.location.altitude != null) {
+    location.altitude = pano.location.altitude;
   }
-
-  let pitch = 0;
-  if (settings.pitch.adjust) {
-    pitch = settings.pitch.randomInRange
-      ? randomInRange(settings.pitch.range[0], settings.pitch.range[1])
-      : Math.random() < 0.5
-        ? settings.pitch.range[0]
-        : settings.pitch.range[1];
-  }
-
-  let zoom = 0;
-  if (settings.zoom.adjust) {
-    zoom = settings.zoom.randomInRange
-      ? randomInRange(settings.zoom.range[0], settings.zoom.range[1])
-      : Math.random() < 0.5
-        ? settings.zoom.range[0]
-        : settings.zoom.range[1];
-  }
-
-  const location: Panorama = {
-    panoId: pano.location.pano,
-    lat: pano.location.latLng.lat(),
-    lng: pano.location.latLng.lng(),
-    heading,
-    pitch,
-    zoom,
-    country: pano.location.country,
-    region: pano.location.region,
-    locality: pano.location.locality,
-    road: pano.location.road,
-    imageDate: pano.imageDate,
-    source: 'baidu_pano',
-    links: [
-      ...new Set(
-        pano.links.map((loc) => loc.pano).concat((pano.time ?? []).map((loc) => loc.pano)),
-      ),
-    ].sort(),
-    extra: {
-      tags: ['baidu'],
-    },
-  };
 
   const icon = icons.gen4;
   addImportedLocation(
@@ -1704,7 +1602,8 @@ async function importLocations(e: Event) {
         .filter(Boolean) as string[],
     );
 
-    for (const location of JSONResult.customCoordinates) {
+    for (const rawLocation of JSONResult.customCoordinates) {
+      const location = normalizeImportedPanorama(rawLocation);
       if (!location.panoId || location.lat == null || location.lng == null) continue;
 
       if (settings.checkImports && location.links) {

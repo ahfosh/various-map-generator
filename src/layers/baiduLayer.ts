@@ -25,7 +25,7 @@ function X$1(n: [number, number], t: number, r = 512): [number, number] {
     return [p, A];
 }
 
-function googleToBaidu([lng, lat]: [number, number]): [number, number] {
+function gcj02ToBaiduMc([lng, lat]: [number, number]): [number, number] {
     return gcoord.transform([lng, lat], gcoord.GCJ02, gcoord.BD09MC);
 }
 
@@ -39,8 +39,8 @@ async function renderTile(
     zoom: number,
     signal?: AbortSignal
 ): Promise<HTMLCanvasElement> {
-    const topLeftBaidu = googleToBaidu([bbox[0], bbox[3]]);
-    const bottomRightBaidu = googleToBaidu([bbox[2], bbox[1]]);
+    const topLeftBaidu = gcj02ToBaiduMc([bbox[0], bbox[3]]);
+    const bottomRightBaidu = gcj02ToBaiduMc([bbox[2], bbox[1]]);
 
     const topLeftTile = baiduToTile(topLeftBaidu, zoom);
     const bottomRightTile = baiduToTile(bottomRightBaidu, zoom);

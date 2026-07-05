@@ -1,4 +1,9 @@
 import { extractDateFromPanoId } from '@/composables/utils';
+import {
+  getBaiduRoadName,
+  parseBaiduLinks,
+  type BaiduSdataResult,
+} from '@/composables/baiduPanorama';
 import { cacheManager, coordinateCache, getCoordinateCacheKey } from '@/cache';
 import gcoord from 'gcoord';
 import {
@@ -43,12 +48,13 @@ async function buildPanoramaFromId(panoId: string): Promise<StreetViewPanoramaDa
   const uri = `https://mapsv0.bdimg.com/?qt=sdata&sid=${panoId}`;
   const resp = await fetch(uri);
   const json = await resp.json();
-  const result = json.content[0];
+  const result = json.content[0] as BaiduSdataResult | undefined;
 
   if (!result?.ID) {
     return null;
   }
 
+  const roadName = getBaiduRoadName(result);
   const date = extractDateFromPanoId(panoId.slice(10, 22));
   const [lng, lat] = gcoord.transform(
     [result.X / 100, result.Y / 100],
@@ -59,17 +65,15 @@ async function buildPanoramaFromId(panoId: string): Promise<StreetViewPanoramaDa
     location: {
       pano: panoId,
       latLng: new LatLng(lat, lng),
-      description: result.Rname,
+      description: roadName,
+      road: roadName,
       altitude: result.Z,
+      pitch: typeof result.Pitch === 'number' ? result.Pitch : 0,
       country: 'CN',
     },
-    links:
-      result.Links?.map((r: { PID: string }) => ({
-        pano: r.PID,
-        heading: 0,
-      })) ?? [],
+    links: parseBaiduLinks(result, panoId),
     tiles: {
-      centerHeading: result.Heading,
+      centerHeading: result.Heading ?? 0,
       tileSize: new Size(512, 512),
       worldSize: new Size(8192, 4096),
       getTileUrl: () => '',

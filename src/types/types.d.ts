@@ -30,11 +30,14 @@ interface Panorama {
   lng: LatLng.lng
   heading: number
   pitch: number
-  zoom: number
+  fov: number
+  /** @deprecated 旧版 Google 街景导出字段，导入时自动转换为 fov */
+  zoom?: number
   country?: string
   region?: string
   locality?: string
   road?: string
+  altitude?: number
   imageDate?: string
   source?: string
   update_type?: string
