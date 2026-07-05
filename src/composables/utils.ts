@@ -20,29 +20,65 @@ export function isAcceptableCurve(links: StreetViewLink[], minCurveAngle: number
   return curveAngle >= minCurveAngle;
 }
 
+const CJK_REGEX = /\p{Script=Han}/u;
+const TOKEN_SPLIT_REGEX = /[\s_,.;!?()'"“”«»、，；：]+/u;
+const SEARCH_TERM_SPLIT_REGEX = /[,，]/;
+
 function normalizeText(text: string) {
   return text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[^\w\s-]/g, '') // Remove punctuation
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .trim();
 }
 
 function tokenize(text: string) {
-  return text.split(/[\s_,.;!?()'"“”«»]+/).filter(Boolean);
+  return text.split(TOKEN_SPLIT_REGEX).filter(Boolean);
+}
+
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function matchesFullWord(term: string, normalizedText: string, words: string[]) {
+  if (words.some((word) => word === term)) return true;
+  if (CJK_REGEX.test(term)) return normalizedText === term;
+
+  const phrase = words.join(' ');
+  return new RegExp(`\\b${escapeRegExp(term)}\\b`, 'i').test(phrase);
 }
 
 function sectionmatch(text: string, target: string): boolean {
   const term = normalizeText(target);
-  const normalized = text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, ''); // remove accents
+  if (!term) return false;
 
-  const pattern = new RegExp(`(^${term}$|^${term},|,\\s*${term}$|,\\s*${term},)`, 'i');
+  const sections = text.split(/[,，、]+/).map((section) => normalizeText(section.trim()));
+  return sections.some((section) => section === term);
+}
 
-  return pattern.test(normalized);
+function matchesSearchTerm(
+  term: string,
+  description: string,
+  shortDescription: string,
+  searchMode: SearchInDescriptionConfig['searchMode'],
+) {
+  const combinedDescription = `${description} ${shortDescription}`.trim();
+  const normalizedText = normalizeText(combinedDescription);
+  const words = tokenize(combinedDescription).map(normalizeText);
+
+  switch (searchMode) {
+    case 'contains':
+      return normalizedText.includes(term);
+    case 'fullword':
+      return matchesFullWord(term, normalizedText, words);
+    case 'startswith':
+      return normalizedText.startsWith(term) || words.some((word) => word.startsWith(term));
+    case 'endswith':
+      return normalizedText.endsWith(term) || words.some((word) => word.endsWith(term));
+    case 'sectionmatch':
+      return sectionmatch(description, term) || sectionmatch(shortDescription, term);
+  }
 }
 
 export function searchInDescription(
@@ -52,7 +88,7 @@ export function searchInDescription(
   if (!searchConfig.searchTerms.trim()) return true;
 
   const searchTerms = searchConfig.searchTerms
-    .split(',')
+    .split(SEARCH_TERM_SPLIT_REGEX)
     .map((term) => normalizeText(term.trim()))
     .filter(Boolean);
 
@@ -60,26 +96,10 @@ export function searchInDescription(
 
   const description = loc.description ?? '';
   const shortDescription = loc.shortDescription ?? '';
-  const combinedDescription = `${description} ${shortDescription}`;
 
-  const normalizedText = normalizeText(combinedDescription);
-  const words = tokenize(combinedDescription).map(normalizeText);
-
-  const hasMatch = searchTerms.some((term) => {
-    switch (searchConfig.searchMode) {
-      case 'contains':
-        return normalizedText.includes(term);
-      case 'fullword':
-        const phrase = words.join(' ');
-        return new RegExp(`\\b${term}\\b`, 'i').test(phrase);
-      case 'startswith':
-        return words.some((word) => word.startsWith(term));
-      case 'endswith':
-        return words.some((word) => word.endsWith(term));
-      case 'sectionmatch':
-        return sectionmatch(description, term) || sectionmatch(shortDescription, term);
-    }
-  });
+  const hasMatch = searchTerms.some((term) =>
+    matchesSearchTerm(term, description, shortDescription, searchConfig.searchMode),
+  );
 
   return searchConfig.filterType === 'exclude' ? !hasMatch : hasMatch;
 }

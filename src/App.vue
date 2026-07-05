@@ -476,8 +476,8 @@
           <div class="flex items-center gap-1 relative">
             <Checkbox v-model="settings.searchInDescription.enabled">在全景描述中搜索 </Checkbox>
             <Tooltip>
-              描述通常基于您的语言区域。<br />
-              您可以输入多个以逗号分隔的搜索词。
+              百度街景的路名来自全景数据中的 Rname 字段。<br />
+              您可以输入多个以逗号分隔的搜索词（支持中文路名）。
             </Tooltip>
           </div>
 
@@ -499,12 +499,12 @@
                 搜索模式
                 <Tooltip>
                   <strong>搜索模式：</strong><br />
-                  • <strong>包含</strong>：文本中任意位置<br />
-                  • <strong>全词</strong>：精确匹配单词<br />
+                  • <strong>包含</strong>：路名中任意位置<br />
+                  • <strong>全词</strong>：精确匹配整段路名<br />
                   • <strong>分段匹配</strong>：精确匹配逗号分隔的段落<br />
-                  （例如：901 N Main Ave, <strong>Springfield</strong>, Missouri）<br />
-                  • <strong>开头匹配</strong>：单词开头<br />
-                  • <strong>结尾匹配</strong>：单词结尾<br />
+                  （例如：北京市，<strong>朝阳区</strong>，建国路）<br />
+                  • <strong>开头匹配</strong>：路名或词段开头<br />
+                  • <strong>结尾匹配</strong>：路名或词段结尾<br />
                 </Tooltip>
               </div>
               <select v-model="settings.searchInDescription.searchMode">
