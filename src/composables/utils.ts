@@ -190,6 +190,115 @@ export function resetPolygonSearchState(polygon: Polygon): void {
   }
 }
 
+/**
+ * Circular exclusion zones around accepted locations.
+ * After a location is added, sampling within radius is skipped.
+ */
+export class ExclusionZones {
+  private centers: LatLng[] = [];
+  private readonly radiusMeters: number;
+  private readonly cellSizeDegLat: number;
+  private grid = new Map<string, number[]>();
+
+  constructor(radiusKm: number) {
+    this.radiusMeters = radiusKm * 1000;
+    this.cellSizeDegLat = this.radiusMeters / 111320;
+  }
+
+  get radiusKm(): number {
+    return this.radiusMeters / 1000;
+  }
+
+  private cellSizeDegLng(lat: number): number {
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    return this.radiusMeters / (111320 * Math.max(cosLat, 0.01));
+  }
+
+  private cellKey(row: number, col: number): string {
+    return `${row}:${col}`;
+  }
+
+  private pushToGrid(idx: number, center: LatLng) {
+    const latRadiusDeg = this.radiusMeters / 111320;
+    const lngRadiusDeg = this.radiusMeters / (111320 * Math.max(Math.cos((center.lat * Math.PI) / 180), 0.01));
+    const cellLng = this.cellSizeDegLng(center.lat);
+
+    const minRow = Math.floor((center.lat - latRadiusDeg) / this.cellSizeDegLat);
+    const maxRow = Math.floor((center.lat + latRadiusDeg) / this.cellSizeDegLat);
+    const minCol = Math.floor((center.lng - lngRadiusDeg) / cellLng);
+    const maxCol = Math.floor((center.lng + lngRadiusDeg) / cellLng);
+
+    for (let row = minRow; row <= maxRow; row++) {
+      for (let col = minCol; col <= maxCol; col++) {
+        const key = this.cellKey(row, col);
+        const bucket = this.grid.get(key);
+        if (bucket) bucket.push(idx);
+        else this.grid.set(key, [idx]);
+      }
+    }
+  }
+
+  add(center: LatLng) {
+    const idx = this.centers.length;
+    this.centers.push(center);
+    this.pushToGrid(idx, center);
+  }
+
+  rebuildFrom(found: Panorama[]) {
+    this.centers = [];
+    this.grid.clear();
+    for (const loc of found) {
+      this.add({ lat: loc.lat, lng: loc.lng });
+    }
+  }
+
+  isExcluded(point: LatLng): boolean {
+    if (this.centers.length === 0) return false;
+
+    const cellLng = this.cellSizeDegLng(point.lat);
+    const row = Math.floor(point.lat / this.cellSizeDegLat);
+    const col = Math.floor(point.lng / cellLng);
+
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const bucket = this.grid.get(this.cellKey(row + dr, col + dc));
+        if (!bucket) continue;
+        for (const idx of bucket) {
+          if (distanceBetween(this.centers[idx], point) < this.radiusMeters) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  clear() {
+    this.centers = [];
+    this.grid.clear();
+  }
+}
+
+const POLYGON_EXCLUSION_ZONES = new WeakMap<Polygon, ExclusionZones>();
+
+export function getExclusionZones(polygon: Polygon, radiusKm: number): ExclusionZones {
+  let zones = POLYGON_EXCLUSION_ZONES.get(polygon);
+  if (!zones || zones.radiusKm !== radiusKm) {
+    zones = new ExclusionZones(radiusKm);
+    zones.rebuildFrom(polygon.found);
+    POLYGON_EXCLUSION_ZONES.set(polygon, zones);
+  }
+  return zones;
+}
+
+export function clearExclusionZones(polygon: Polygon): void {
+  POLYGON_EXCLUSION_ZONES.delete(polygon);
+}
+
+export function isInExclusionZone(point: LatLng, polygon: Polygon, radiusKm: number): boolean {
+  return getExclusionZones(polygon, radiusKm).isExcluded(point);
+}
+
 export class GridGenerator {
   // Bounds & grid
   private bounds: { south: number; north: number; west: number; east: number };

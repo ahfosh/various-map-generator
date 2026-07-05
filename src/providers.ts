@@ -5,6 +5,7 @@ import {
   type BaiduSdataResult,
 } from '@/composables/baiduPanorama';
 import { cacheManager, coordinateCache, getCoordinateCacheKey } from '@/cache';
+import { panoRequestQueue } from '@/concurrency';
 import gcoord from 'gcoord';
 import {
   LatLng,
@@ -95,13 +96,29 @@ async function buildPanoramaFromId(panoId: string): Promise<StreetViewPanoramaDa
   return panorama;
 }
 
+type PanoramaCallback = (
+  res: StreetViewPanoramaData | null,
+  status: StreetViewStatus,
+) => void | Promise<void>
+
+async function invokeCallback(
+  onCompleted: PanoramaCallback,
+  res: StreetViewPanoramaData | null,
+  status: StreetViewStatus,
+) {
+  const result = onCompleted(res, status)
+  if (result instanceof Promise) {
+    await result
+  }
+}
+
 async function getFromBaidu(
   request: StreetViewLocationRequest,
-  onCompleted: (res: StreetViewPanoramaData | null, status: StreetViewStatus) => void,
+  onCompleted: PanoramaCallback,
 ) {
   try {
     if (request.pano && cacheManager.has('baidu', request.pano)) {
-      onCompleted(cacheManager.get('baidu', request.pano)!, StreetViewStatus.OK);
+      await invokeCallback(onCompleted, cacheManager.get('baidu', request.pano)!, StreetViewStatus.OK);
       return;
     }
 
@@ -119,33 +136,33 @@ async function getFromBaidu(
     }
 
     if (!panoId) {
-      onCompleted(null, StreetViewStatus.ZERO_RESULTS);
+      await invokeCallback(onCompleted, null, StreetViewStatus.ZERO_RESULTS);
       return;
     }
 
     if (cacheManager.has('baidu', panoId)) {
-      onCompleted(cacheManager.get('baidu', panoId)!, StreetViewStatus.OK);
+      await invokeCallback(onCompleted, cacheManager.get('baidu', panoId)!, StreetViewStatus.OK);
       return;
     }
 
     const panorama = await buildPanoramaFromId(panoId);
     if (!panorama) {
-      onCompleted(null, StreetViewStatus.ZERO_RESULTS);
+      await invokeCallback(onCompleted, null, StreetViewStatus.ZERO_RESULTS);
       return;
     }
 
-    onCompleted(panorama, StreetViewStatus.OK);
+    await invokeCallback(onCompleted, panorama, StreetViewStatus.OK);
   } catch {
-    onCompleted(null, StreetViewStatus.UNKNOWN_ERROR);
+    await invokeCallback(onCompleted, null, StreetViewStatus.UNKNOWN_ERROR);
   }
 }
 
 const StreetViewProviders = {
   getPanorama: async (
     request: StreetViewLocationRequest,
-    onCompleted: (res: StreetViewPanoramaData | null, status: StreetViewStatus) => void,
+    onCompleted: PanoramaCallback,
   ) => {
-    await getFromBaidu(request, onCompleted);
+    await panoRequestQueue.run(() => getFromBaidu(request, onCompleted));
   },
 };
 

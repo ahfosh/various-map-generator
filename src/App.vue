@@ -771,11 +771,13 @@ import {
   getCurrentDate,
   parseDate,
   extractMonthYear,
-  distanceBetween,
   readFileAsText,
   getPolygonName,
   changePolygonName,
   getMonthEndTimestamp,
+  getExclusionZones,
+  clearExclusionZones,
+  isInExclusionZone,
 } from '@/composables/utils.ts';
 import StreetViewProviders from '@/providers';
 import { generationConcurrency } from '@/concurrency';
@@ -862,6 +864,7 @@ function clearPolygon(polygon: Polygon) {
 
   polygon.found.length = 0;
   resetPolygonSearchState(polygon);
+  clearExclusionZones(polygon);
 
   // Clear cached generator and its persisted state
   const generator = gridGenerators.get(polygon._leaflet_id);
@@ -895,6 +898,7 @@ function clearAllLocations() {
   for (const polygon of selected.value) {
     polygon.found.length = 0;
     resetPolygonSearchState(polygon);
+    clearExclusionZones(polygon);
 
     // Clear cached generators and their persisted states
     const generator = gridGenerators.get(polygon._leaflet_id);
@@ -967,7 +971,24 @@ document.onkeydown = (event) => {
 };
 
 function getRequestChunkSize(): number {
-  return settings.findRegions ? 1 : generationConcurrency.getChunkSize();
+  return generationConcurrency.getChunkSize();
+}
+
+function isSampleExcluded(point: LatLng, polygon: Polygon): boolean {
+  return settings.findRegions && isInExclusionZone(point, polygon, settings.regionRadius);
+}
+
+function ensureExclusionZones(polygon: Polygon) {
+  if (settings.findRegions) {
+    getExclusionZones(polygon, settings.regionRadius);
+  }
+}
+
+function resetGenerationState() {
+  state.started = false;
+  for (const polygon of selected.value) {
+    polygon.isProcessing = false;
+  }
 }
 
 async function startGeneration() {
@@ -975,14 +996,23 @@ async function startGeneration() {
 
   generationConcurrency.reset();
   state.started = true;
-  await start();
+
+  try {
+    await start();
+  } catch (err) {
+    console.error('Generation error:', err);
+    const message = err instanceof Error ? err.message : '未知错误';
+    alert(`生成器出错：${message}`);
+  } finally {
+    resetGenerationState();
+  }
 }
 
 const handleClickStart = async () => {
   if (!state.started) {
     await startGeneration();
   } else {
-    state.started = false;
+    resetGenerationState();
   }
 };
 
@@ -1003,83 +1033,116 @@ async function start() {
     }
     await Promise.all(tasks);
   }
-  state.started = false;
+}
+
+async function collectRandomCoords(polygon: Polygon, n: number): Promise<LatLng[]> {
+  const coords: LatLng[] = [];
+  const maxAttempts = Math.max(n * 200, 2000);
+  let attempts = 0;
+
+  while (coords.length < n && attempts < maxAttempts) {
+    attempts++;
+    const point = randomPointInPoly(polygon);
+    if (
+      booleanPointInPolygon([point.lng, point.lat], polygon.feature) &&
+      isInChina(point.lng, point.lat) &&
+      !isSampleExcluded(point, polygon)
+    ) {
+      coords.push(point);
+    }
+
+    if (attempts % 500 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  return coords;
 }
 
 async function generate(polygon: Polygon) {
-  if (settings.strategy === 'grid') {
-    const chunkSize = getRequestChunkSize();
-    const batchSize = Math.max(chunkSize * 2, 150);
+  ensureExclusionZones(polygon);
 
-    polygon.isProcessing = true;
+  try {
+    if (settings.strategy === 'grid') {
+      const chunkSize = getRequestChunkSize();
+      const batchSize = Math.max(chunkSize * 2, 150);
 
-    let gridGenerator = gridGenerators.get(polygon._leaflet_id);
-    if (!gridGenerator) {
-      gridGenerator = new GridGenerator(polygon, settings.radius);
-      gridGenerators.set(polygon._leaflet_id, gridGenerator);
-    }
+      polygon.isProcessing = true;
 
-    // Loop until target is reached
-    while (polygon.found.length < polygon.nbNeeded) {
-      if (!state.started) break;
-
-      // Use generator to stream coordinates in batches
-      const batchGenerator = gridGenerator.generateBatch(batchSize);
-      let hasMoreCoords = false;
-
-      for (const batch of batchGenerator) {
-        if (!state.started) break;
-        if (polygon.found.length >= polygon.nbNeeded) break;
-
-        hasMoreCoords = true;
-
-        const chinaBatch = batch.filter((point) => isInChina(point.lng, point.lat));
-        for (const locationGroup of chinaBatch.chunk(chunkSize)) {
-          if (!state.started) break;
-          if (polygon.found.length >= polygon.nbNeeded) break;
-          await Promise.allSettled(locationGroup.map((l) => getLoc(l, polygon)));
+      let gridGenerator = gridGenerators.get(polygon._leaflet_id);
+      if (!gridGenerator) {
+        try {
+          gridGenerator = new GridGenerator(polygon, settings.radius);
+          gridGenerators.set(polygon._leaflet_id, gridGenerator);
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : '区域过大，无法使用网格策略。请缩小区域或改用随机策略。';
+          throw new Error(message);
         }
       }
 
-      // If no new coordinates were generated in this iteration, brief pause before next cycle
-      if (!hasMoreCoords && polygon.found.length < polygon.nbNeeded) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
+      // Loop until target is reached
+      while (polygon.found.length < polygon.nbNeeded) {
+        if (!state.started) break;
+
+        // Use generator to stream coordinates in batches
+        const batchGenerator = gridGenerator.generateBatch(batchSize);
+        let hasMoreCoords = false;
+
+        for (const batch of batchGenerator) {
+          if (!state.started) break;
+          if (polygon.found.length >= polygon.nbNeeded) break;
+
+          hasMoreCoords = true;
+
+          const chinaBatch = batch.filter(
+            (point) => isInChina(point.lng, point.lat) && !isSampleExcluded(point, polygon),
+          );
+          for (const locationGroup of chinaBatch.chunk(chunkSize)) {
+            if (!state.started) break;
+            if (polygon.found.length >= polygon.nbNeeded) break;
+            await Promise.allSettled(locationGroup.map((l) => getLoc(l, polygon)));
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+
+        // If no new coordinates were generated in this iteration, brief pause before next cycle
+        if (!hasMoreCoords && polygon.found.length < polygon.nbNeeded) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
       }
+
+      // Clean up generator when polygon is complete
+      if (polygon.found.length >= polygon.nbNeeded) {
+        gridGenerators.delete(polygon._leaflet_id);
+      }
+
+      return;
     }
 
+    while (polygon.found.length < polygon.nbNeeded) {
+      if (!state.started) return;
+      polygon.isProcessing = true;
+
+      const n = Math.min(polygon.nbNeeded * 100, settings.speed);
+      const randomCoords = await collectRandomCoords(polygon, n);
+      if (randomCoords.length === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        continue;
+      }
+
+      const chunkSize = getRequestChunkSize();
+      for (const locationGroup of randomCoords.chunk(chunkSize)) {
+        if (!state.started) return;
+        await Promise.allSettled(locationGroup.map((l) => getLoc(l, polygon)));
+      }
+    }
+  } finally {
     polygon.isProcessing = false;
-
-    // Clean up generator when polygon is complete
-    if (polygon.found.length >= polygon.nbNeeded) {
-      gridGenerators.delete(polygon._leaflet_id);
-    }
-
-    return;
   }
-
-  while (polygon.found.length < polygon.nbNeeded) {
-    if (!state.started) return;
-    polygon.isProcessing = true;
-
-    const randomCoords = [];
-    const n = Math.min(polygon.nbNeeded * 100, settings.speed);
-
-    while (randomCoords.length < n) {
-      const point = randomPointInPoly(polygon);
-      if (
-        booleanPointInPolygon([point.lng, point.lat], polygon.feature) &&
-        isInChina(point.lng, point.lat)
-      ) {
-        randomCoords.push(point);
-      }
-    }
-
-    const chunkSize = getRequestChunkSize();
-    for (const locationGroup of randomCoords.chunk(chunkSize)) {
-      await Promise.allSettled(locationGroup.map((l) => getLoc(l, polygon)));
-    }
-  }
-  polygon.isProcessing = false;
 }
 
 function getPanoramaRequest(loc: LatLng): StreetViewLocationRequest {
@@ -1091,6 +1154,7 @@ function getPanoramaRequest(loc: LatLng): StreetViewLocationRequest {
 
 async function getLoc(loc: LatLng, polygon: Polygon) {
   if (!isInChina(loc.lng, loc.lat)) return false;
+  if (isSampleExcluded(loc, polygon)) return false;
 
   return StreetViewProviders.getPanorama(getPanoramaRequest(loc), async (res, status) => {
     if (status === StreetViewStatus.UNKNOWN_ERROR) {
@@ -1115,13 +1179,11 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
 
     if (settings.findRegions) {
       settings.checkAllDates = false;
-      let i = 0;
-      while (i < polygon.found.length) {
-        if (distanceBetween(polygon.found[i], loc) < settings.regionRadius * 1000) {
-          return false;
-        }
-        i++;
-      }
+      const panoPoint = {
+        lat: res.location.latLng.lat(),
+        lng: res.location.latLng.lng(),
+      };
+      if (isInExclusionZone(panoPoint, polygon, settings.regionRadius)) return false;
     }
 
     if (settings.filterByMinutes.enabled) {
@@ -1452,6 +1514,12 @@ function addLocation(
   opacity: number = 1.0,
 ) {
   if (allFoundPanoIds.has(location.panoId)) return;
+
+  const panoPoint = { lat: location.lat, lng: location.lng };
+  if (settings.findRegions && isInExclusionZone(panoPoint, polygon, settings.regionRadius)) {
+    return;
+  }
+
   allFoundPanoIds.add(location.panoId);
 
   let markerLayer = markerLayers['gen4'];
@@ -1465,6 +1533,10 @@ function addLocation(
 
   if (polygon.found.length < polygon.nbNeeded) {
     polygon.found.push(location);
+
+    if (settings.findRegions) {
+      getExclusionZones(polygon, settings.regionRadius).add(panoPoint);
+    }
 
     addGlifyPoint(location, markerType, polygon._leaflet_id);
 

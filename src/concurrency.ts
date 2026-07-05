@@ -54,3 +54,39 @@ export class AdaptiveConcurrency {
 }
 
 export const generationConcurrency = new AdaptiveConcurrency()
+
+type QueueTask<T> = {
+  fn: () => Promise<T>
+  resolve: (value: T) => void
+  reject: (reason?: unknown) => void
+}
+
+export class RequestQueue {
+  private running = 0
+  private queue: QueueTask<unknown>[] = []
+
+  constructor(private readonly maxConcurrent = 40) {}
+
+  run<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.queue.push({ fn, resolve, reject } as QueueTask<unknown>)
+      this.drain()
+    })
+  }
+
+  private drain() {
+    while (this.running < this.maxConcurrent && this.queue.length > 0) {
+      const task = this.queue.shift()!
+      this.running++
+      task
+        .fn()
+        .then(task.resolve, task.reject)
+        .finally(() => {
+          this.running--
+          this.drain()
+        })
+    }
+  }
+}
+
+export const panoRequestQueue = new RequestQueue()
