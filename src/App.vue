@@ -20,15 +20,15 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
         <Collapsible :is-open="panels.general" class="settings-panel-content">
-          <div class="flex items-center justify-between ml-1 mr-1">
-            主题：
-            <select v-model="themeMode" class="w-22 ml-10">
-              <option value="auto">跟随系统</option>
-              <option value="light">浅色</option>
-              <option value="dark">深色</option>
-            </select>
+          <div class="flex items-center justify-between ml-1 mr-1 gap-2">
+            页面主题：
+            <Segment
+              :model-value="themeMode"
+              :options="pageThemeOptions"
+              @update:model-value="(v) => (themeMode = v)"
+            />
           </div>
-          <div class="flex items-center justify-between ml-1 mr-1">
+          <div class="flex items-center justify-between ml-1 mr-1 gap-2">
             地图主题：
             <Segment
               :model-value="settings.mapTheme"
@@ -836,6 +836,12 @@ const panels = useStorage('map_generator__panels_v2', {
   mapMakingSettings: false,
   marker: false,
 });
+
+const pageThemeOptions = [
+  { value: 'auto', label: '系统' },
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+];
 
 const mapThemeOptions = [
   { value: 'classic', label: '经典' },
