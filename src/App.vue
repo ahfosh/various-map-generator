@@ -102,11 +102,11 @@
         <div class="polygon-list settings-panel-content--scroll">
           <div v-for="polygon of selected" :key="polygon._leaflet_id" class="polygon-item">
             <span
-              v-if="polygon.feature.properties.code"
+              v-if="polygon.feature?.properties?.code"
               :class="`flag-icon flag-` + getFlagCountryCode(polygon.feature.properties.code)"
             ></span>
-            <label class="polygon-name" @click="changePolygonName(polygon.feature.properties)">
-              {{ getPolygonName(polygon.feature.properties) }}
+            <label class="polygon-name" @click="changePolygonName(polygon.feature?.properties)">
+              {{ getPolygonName(polygon.feature?.properties) }}
             </label>
             <Spinner v-if="state.started && polygon.isProcessing" animate />
 

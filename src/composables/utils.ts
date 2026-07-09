@@ -764,7 +764,10 @@ export function randomInRange(min: number, max: number) {
   return Math.round((Math.random() * (max - min + 1) + min) * 100) / 100;
 }
 
-export function getPolygonName(properties: Polygon['feature']['properties']) {
+export function getPolygonName(
+  properties: Polygon['feature']['properties'] | null | undefined,
+) {
+  if (!properties) return '未命名多边形';
   return (
     properties.name ||
     properties.NAME ||
@@ -789,7 +792,10 @@ export function getPolygonName(properties: Polygon['feature']['properties']) {
   );
 }
 
-export function changePolygonName(properties: Polygon['feature']['properties']) {
+export function changePolygonName(
+  properties: Polygon['feature']['properties'] | null | undefined,
+) {
+  if (!properties) return;
   const newName = prompt('多边形新名称：');
   if (typeof newName === 'string' && newName !== '') {
     properties.name = newName;

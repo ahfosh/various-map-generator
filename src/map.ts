@@ -258,6 +258,11 @@ const openNearestPano = (e: L.ContextMenuItemClickEvent) => {
 }
 
 function initPolygon(polygon: Polygon) {
+  if (!polygon.feature) {
+    polygon.feature = { type: 'Feature', properties: {} as Feature['properties'], geometry: polygon.toGeoJSON().geometry } as Feature
+  } else if (!polygon.feature.properties) {
+    polygon.feature.properties = {} as Feature['properties']
+  }
   if (!polygon.found) polygon.found = []
   if (!polygon.nbNeeded) polygon.nbNeeded = 10000
   if (!polygon.checkedPanos) polygon.checkedPanos = new Set()
@@ -266,6 +271,7 @@ function initPolygon(polygon: Polygon) {
 function selectPolygon(e: L.LeafletMouseEvent) {
   if (state.started) return
   const polygon = e.target as Polygon
+  initPolygon(polygon)
   const index = selected.value.findIndex((x) => x._leaflet_id === polygon._leaflet_id)
   if (index == -1) {
     polygon.setStyle(polygonStyles.highlighted())
@@ -582,7 +588,13 @@ async function loadLayer(layer: LayerMeta) {
 
     const style = polygonStyles.customPolygonStyle
 
-    geoJsonLayer = L.geoJSON(data, { style, onEachFeature })
+    geoJsonLayer = L.geoJSON(data, {
+      style,
+      onEachFeature: (feature, layer) => {
+        if (!feature.properties) feature.properties = {}
+        onEachFeature(feature as Feature, layer)
+      },
+    })
     geoJsonLayer.eachLayer((polygon) => {
       initPolygon(polygon as Polygon)
     })
@@ -855,10 +867,12 @@ function onEachFeature(_: Feature, layer: L.Layer) {
 function highlightFeature(e: L.LeafletMouseEvent) {
   if (state.started) return
   const polygon = e.target as Polygon
+  initPolygon(polygon)
   if (!selected.value.some((x) => x._leaflet_id === polygon._leaflet_id)) {
     polygon.setStyle(polygonStyles.highlighted())
   }
-  select.value = `${getPolygonName(polygon.feature.properties)} ${polygon.found ? '(' + polygon.found.length + ')' : '(0)'}`
+  const count = polygon.found?.length ?? 0
+  select.value = `${getPolygonName(polygon.feature?.properties)} (${count})`
 }
 
 function resetHighlight(e: L.LeafletMouseEvent) {
