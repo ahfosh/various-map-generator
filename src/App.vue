@@ -378,18 +378,54 @@
           <Checkbox v-model="settings.rejectRoadName">拒绝有路名的地点</Checkbox>
 
           <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
-          <div class="flex flex-wrap gap-x-4 gap-y-1">
+          <div class="flex flex-col gap-1">
             <Checkbox v-model="settings.filterCaptureDate">采集日期</Checkbox>
-            <Checkbox v-model="settings.filterPublishDate">发布日期</Checkbox>
-          </div>
-          <div v-if="!settings.selectMonths" class="flex flex-col gap-0.5">
-            <div class="flex justify-between">
-              起始：
-              <input :type="'month'" v-model="settings.fromDate" min="2007-01" :max="currentDate" />
+            <div
+              v-if="settings.filterCaptureDate && !settings.selectMonths"
+              class="flex flex-col gap-0.5 ml-6"
+            >
+              <div class="flex justify-between items-center gap-2">
+                最早采集
+                <input
+                  type="month"
+                  v-model="settings.captureFromDate"
+                  min="2007-01"
+                  :max="currentDate"
+                />
+              </div>
+              <div class="flex justify-between items-center gap-2">
+                最晚采集
+                <input
+                  type="month"
+                  v-model="settings.captureToDate"
+                  min="2007-01"
+                  :max="currentDate"
+                />
+              </div>
             </div>
-            <div class="flex justify-between">
-              截止：
-              <input :type="'month'" v-model="settings.toDate" min="2007-01" :max="currentDate" />
+            <Checkbox v-model="settings.filterPublishDate">发布日期</Checkbox>
+            <div
+              v-if="settings.filterPublishDate && !settings.selectMonths"
+              class="flex flex-col gap-0.5 ml-6"
+            >
+              <div class="flex justify-between items-center gap-2">
+                最早发布
+                <input
+                  type="month"
+                  v-model="settings.publishFromDate"
+                  min="2007-01"
+                  :max="currentDate"
+                />
+              </div>
+              <div class="flex justify-between items-center gap-2">
+                最晚发布
+                <input
+                  type="month"
+                  v-model="settings.publishToDate"
+                  min="2007-01"
+                  :max="currentDate"
+                />
+              </div>
             </div>
           </div>
 
@@ -814,11 +850,15 @@ const allFoundPanoIds = new Set<string>();
 // Grid generators cache - persist across pause/resume
 const gridGenerators = new Map<number, GridGenerator>();
 
-const cachedDates = ref({
-  fromDate: Date.parse(settings.fromDate),
-  toDate: getMonthEndTimestamp(settings.toDate),
-  lastFromDate: settings.fromDate,
-  lastToDate: settings.toDate,
+const cachedDateRanges = ref({
+  captureFrom: Date.parse(settings.captureFromDate),
+  captureTo: getMonthEndTimestamp(settings.captureToDate),
+  lastCaptureFrom: settings.captureFromDate,
+  lastCaptureTo: settings.captureToDate,
+  publishFrom: Date.parse(settings.publishFromDate),
+  publishTo: getMonthEndTimestamp(settings.publishToDate),
+  lastPublishFrom: settings.publishFromDate,
+  lastPublishTo: settings.publishToDate,
 });
 
 function findDateInObject(obj: any): Date | null {
@@ -831,17 +871,26 @@ function findDateInObject(obj: any): Date | null {
   return null;
 }
 
-function getCachedDates() {
-  if (
-    cachedDates.value.lastFromDate !== settings.fromDate ||
-    cachedDates.value.lastToDate !== settings.toDate
-  ) {
-    cachedDates.value.fromDate = Date.parse(settings.fromDate);
-    cachedDates.value.toDate = getMonthEndTimestamp(settings.toDate);
-    cachedDates.value.lastFromDate = settings.fromDate;
-    cachedDates.value.lastToDate = settings.toDate;
+function getCachedCaptureDates() {
+  const c = cachedDateRanges.value;
+  if (c.lastCaptureFrom !== settings.captureFromDate || c.lastCaptureTo !== settings.captureToDate) {
+    c.captureFrom = Date.parse(settings.captureFromDate);
+    c.captureTo = getMonthEndTimestamp(settings.captureToDate);
+    c.lastCaptureFrom = settings.captureFromDate;
+    c.lastCaptureTo = settings.captureToDate;
   }
-  return { fromDate: cachedDates.value.fromDate, toDate: cachedDates.value.toDate };
+  return { fromDate: c.captureFrom, toDate: c.captureTo };
+}
+
+function getCachedPublishDates() {
+  const c = cachedDateRanges.value;
+  if (c.lastPublishFrom !== settings.publishFromDate || c.lastPublishTo !== settings.publishToDate) {
+    c.publishFrom = Date.parse(settings.publishFromDate);
+    c.publishTo = getMonthEndTimestamp(settings.publishToDate);
+    c.lastPublishFrom = settings.publishFromDate;
+    c.lastPublishTo = settings.publishToDate;
+  }
+  return { fromDate: c.publishFrom, toDate: c.publishTo };
 }
 
 const canBeStarted = computed(() =>
@@ -1222,7 +1271,7 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
         const panoDate = findDateInObject(randomPano);
         const parsedDate = panoDate ? panoDate.getTime() : undefined;
         if (parsedDate) {
-          const { fromDate, toDate } = getCachedDates();
+          const { fromDate, toDate } = getCachedCaptureDates();
           if (parsedDate < fromDate || parsedDate > toDate) return false;
         }
       }
@@ -1236,7 +1285,7 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
         return true;
       }
       if (filterCapture) {
-        const { fromDate, toDate } = getCachedDates();
+        const { fromDate, toDate } = getCachedCaptureDates();
         let dateWithin = false;
         for (const timelineLoc of res.time) {
           const date = findDateInObject(timelineLoc);
@@ -1265,12 +1314,13 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
         if (!filterCapture && !filterPublish && !captureDate && !publishDate) return false;
       }
       if (!settings.selectMonths) {
-        const { fromDate, toDate } = getCachedDates();
         if (filterCapture && captureDate) {
+          const { fromDate, toDate } = getCachedCaptureDates();
           const t = Date.parse(captureDate);
           if (!Number.isNaN(t) && (t < fromDate || t > toDate)) return false;
         }
         if (filterPublish && publishDate) {
+          const { fromDate, toDate } = getCachedPublishDates();
           const t = Date.parse(publishDate);
           if (!Number.isNaN(t) && (t < fromDate || t > toDate)) return false;
         }
@@ -1322,7 +1372,8 @@ async function isPanoGood(pano: StreetViewPanoramaData) {
     if (!filterCapture && !filterPublish && !captureDate && !publishDate) return false;
   }
 
-  const { fromDate, toDate } = getCachedDates();
+  const captureRange = getCachedCaptureDates();
+  const publishRange = getCachedPublishDates();
   const fromMonth = settings.fromMonth;
   const toMonth = settings.toMonth;
   const fromYear = settings.fromYear;
@@ -1340,16 +1391,16 @@ async function isPanoGood(pano: StreetViewPanoramaData) {
     return m >= fm || m <= tm;
   };
 
-  const dateInConfiguredRange = (dateStr: string) => {
+  const dateInRange = (dateStr: string, range: { fromDate: number; toDate: number }) => {
     if (settings.selectMonths) {
       return monthInRange(dateStr.slice(5, 7), dateStr.slice(0, 4));
     }
     const t = Date.parse(dateStr);
-    return !Number.isNaN(t) && t >= fromDate && t <= toDate;
+    return !Number.isNaN(t) && t >= range.fromDate && t <= range.toDate;
   };
 
-  if (filterCapture && captureDate && !dateInConfiguredRange(captureDate)) return false;
-  if (filterPublish && publishDate && !dateInConfiguredRange(publishDate)) return false;
+  if (filterCapture && captureDate && !dateInRange(captureDate, captureRange)) return false;
+  if (filterPublish && publishDate && !dateInRange(publishDate, publishRange)) return false;
 
   if (settings.onlyOneInTimeframe && filterCapture) {
     if (!pano.time?.length) return false;
@@ -1357,7 +1408,7 @@ async function isPanoGood(pano: StreetViewPanoramaData) {
       if (loc.pano == pano.location?.pano) continue;
       const date = findDateInObject(loc);
       const iDate = parseDate(date);
-      if (iDate >= fromDate && iDate <= toDate) return false;
+      if (iDate >= captureRange.fromDate && iDate <= captureRange.toDate) return false;
     }
   }
 
@@ -1374,7 +1425,7 @@ async function isPanoGood(pano: StreetViewPanoramaData) {
         }
       } else {
         const iDate = parseDate(timeframeDate);
-        if (iDate >= fromDate && iDate <= toDate) {
+        if (iDate >= captureRange.fromDate && iDate <= captureRange.toDate) {
           dateWithin = true;
           break;
         }
@@ -1420,7 +1471,7 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
     if (settings.checkAllDates && !settings.selectMonths && pano.time) {
       // 勾选采集日：按时间线采集日预筛；仅发布日时时间线无 procdate，全部深入
       if (settings.filterCaptureDate) {
-        const { fromDate, toDate } = getCachedDates();
+        const { fromDate, toDate } = getCachedCaptureDates();
         for (const loc of pano.time) {
           const date = findDateInObject(loc);
           const iDate = parseDate(date);
@@ -1654,7 +1705,7 @@ function getPanoForImportDeep(id: string, depth: number) {
 
     if (settings.checkAllDates && !settings.selectMonths && pano.time) {
       if (settings.filterCaptureDate) {
-        const { fromDate, toDate } = getCachedDates();
+        const { fromDate, toDate } = getCachedCaptureDates();
         for (const loc of pano.time) {
           const date = findDateInObject(loc);
           const iDate = parseDate(date);

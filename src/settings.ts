@@ -41,8 +41,10 @@ const defaultSettings = {
   checkLinks: false,
   linksDepth: 2,
 
-  fromDate: '2009-01',
-  toDate: currentDate,
+  captureFromDate: '2009-01',
+  captureToDate: currentDate,
+  publishFromDate: '2009-01',
+  publishToDate: currentDate,
   fromMonth: '01',
   toMonth: '12',
   fromYear: '2007',
@@ -115,7 +117,6 @@ CURRENT_KEYS.forEach((key: string) => {
 })
 const storedSettings = useStorage(CURRENT_KEY, defaultSettings)
 const settings = reactive(storedSettings.value)
-settings.toDate = currentDate
 settings.toYear = currentYear
 
 // 从旧版 dateSource 迁移
@@ -130,6 +131,26 @@ if (legacyDateSource === 'publish') {
 delete (settings as { dateSource?: string }).dateSource
 if (typeof settings.filterCaptureDate !== 'boolean') settings.filterCaptureDate = true
 if (typeof settings.filterPublishDate !== 'boolean') settings.filterPublishDate = false
+
+// 从共享 fromDate/toDate 拆成采集/发布两套区间
+const legacy = settings as {
+  fromDate?: string
+  toDate?: string
+  captureFromDate?: string
+  captureToDate?: string
+  publishFromDate?: string
+  publishToDate?: string
+}
+const legacyFrom = legacy.fromDate ?? '2009-01'
+const legacyTo = legacy.toDate ?? currentDate
+if (typeof settings.captureFromDate !== 'string') settings.captureFromDate = legacyFrom
+if (typeof settings.captureToDate !== 'string') settings.captureToDate = legacyTo
+if (typeof settings.publishFromDate !== 'string') settings.publishFromDate = legacyFrom
+if (typeof settings.publishToDate !== 'string') settings.publishToDate = legacyTo
+delete legacy.fromDate
+delete legacy.toDate
+settings.captureToDate = currentDate
+settings.publishToDate = currentDate
 
 if (settings.autoUaTune !== false) {
   applyUaGeneratorProfile(settings)
