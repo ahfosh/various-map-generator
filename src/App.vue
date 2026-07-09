@@ -163,12 +163,7 @@
           <h2>导入地点（{{ importedLocations.length }}）</h2>
           <Button size="sm" squared title="导入 JSON 地点" class="ml-auto">
             <label class="cursor-pointer">
-              <input
-                type="file"
-                accept=".json,application/json"
-                hidden
-                @change="importLocations"
-              />
+              <input type="file" accept=".json,application/json" hidden @change="importLocations" />
               <FileImportIcon class="w-5 h-5" />
             </label>
           </Button>
@@ -364,31 +359,12 @@
           <ChevronDownIcon class="collapsible-indicator absolute top-0 right-0" />
         </div>
         <Collapsible :is-open="panels.coverageSettings" class="settings-panel-content">
-          <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
-
-          <div class="flex flex-col gap-0.5">
-            <div class="flex justify-between items-center gap-2" title="筛选与「检查所有日期」所依据的时间字段">
-              <span>日期依据</span>
-              <select v-model="settings.dateSource" class="min-w-36">
-                <option value="capture">采集日期</option>
-                <option value="publish">发布日期 (procdate)</option>
-              </select>
-            </div>
-            <p class="text-xs opacity-70 leading-snug m-0">
-              采集日来自 panoId / API Date；发布日为 sdata 的 procdate（上线时间，可能晚于拍摄）。
-            </p>
-          </div>
-
-          <Checkbox v-model="settings.rejectNoDescription"> 拒绝无描述的地点 </Checkbox>
-          <Checkbox v-model="settings.rejectRoadName"> 拒绝有路名的地点 </Checkbox>
-
           <Checkbox
             v-model="settings.onlyOneInTimeframe"
             title="仅允许在时间范围内附近没有其他覆盖的地点。"
           >
             每个位置仅一个全景图
           </Checkbox>
-
           <Checkbox v-model="settings.checkLinks">检查链接的全景图</Checkbox>
           <div v-if="settings.checkLinks" class="flex items-center justify-between ml-6">
             深度：
@@ -398,6 +374,22 @@
             </div>
           </div>
 
+          <Checkbox v-model="settings.rejectNoDescription">拒绝无描述的地点</Checkbox>
+          <Checkbox v-model="settings.rejectRoadName">拒绝有路名的地点</Checkbox>
+
+          <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
+          <div class="flex flex-col gap-0.5">
+            <div
+              class="flex justify-between items-center gap-2"
+              title="筛选与「检查所有日期」所依据的时间字段"
+            >
+              <span>日期依据</span>
+              <select v-model="settings.dateSource" class="min-w-36">
+                <option value="capture">采集日期</option>
+                <option value="publish">发布日期</option>
+              </select>
+            </div>
+          </div>
           <div v-if="!settings.selectMonths" class="flex flex-col gap-0.5">
             <div class="flex justify-between">
               起始：
@@ -1730,9 +1722,7 @@ async function importLocations(e: Event) {
     }
 
     const importedPanoIds = new Set(
-      JSONResult.customCoordinates
-        .map((location) => location.panoId)
-        .filter(Boolean) as string[],
+      JSONResult.customCoordinates.map((location) => location.panoId).filter(Boolean) as string[],
     );
 
     for (const rawLocation of JSONResult.customCoordinates) {
