@@ -75,19 +75,23 @@ export function toFilterDateTime(ymdOrIso?: string | null): string | undefined {
   return ymd ? `${ymd}T00:00:00` : s
 }
 
-/**
- * 生成/筛选用的有效日期。
- * - capture：采集日（imageDate / API Date / panoId）
- * - publish：发布日（procdate）
- */
+/** 采集日（imageDate）或发布日（procDate） */
+export function getPanoramaDateField(
+  pano: { imageDate?: string; procDate?: string },
+  field: 'capture' | 'publish',
+): string | undefined {
+  if (field === 'publish') {
+    return toFilterDateTime(pano.procDate) ?? undefined
+  }
+  return toFilterDateTime(pano.imageDate) ?? undefined
+}
+
+/** @deprecated 使用 getPanoramaDateField */
 export function getEffectivePanoramaDate(
   pano: { imageDate?: string; procDate?: string },
   dateSource: 'capture' | 'publish' = 'capture',
 ): string | undefined {
-  if (dateSource === 'publish') {
-    return toFilterDateTime(pano.procDate) ?? undefined
-  }
-  return toFilterDateTime(pano.imageDate) ?? undefined
+  return getPanoramaDateField(pano, dateSource)
 }
 
 export interface PanoramaViewSettings {

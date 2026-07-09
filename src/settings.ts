@@ -25,12 +25,10 @@ const defaultSettings = {
   regionRadius: 100,
 
   rejectDateless: true,
-  /**
-   * 日期筛选依据：
-   * - capture：采集日（panoId / sdata.Date）
-   * - publish：发布日（sdata.procdate，街景上线时间）
-   */
-  dateSource: 'capture' as 'capture' | 'publish',
+  /** 按采集日筛选（可与发布日同时开启） */
+  filterCaptureDate: true,
+  /** 按发布日筛选（可与采集日同时开启） */
+  filterPublishDate: false,
   rejectNoDescription: true,
   rejectRoadName: false,
   searchInDescription: {
@@ -119,9 +117,19 @@ const storedSettings = useStorage(CURRENT_KEY, defaultSettings)
 const settings = reactive(storedSettings.value)
 settings.toDate = currentDate
 settings.toYear = currentYear
-if (settings.dateSource !== 'capture' && settings.dateSource !== 'publish') {
-  settings.dateSource = 'capture'
+
+// 从旧版 dateSource 迁移
+const legacyDateSource = (settings as { dateSource?: string }).dateSource
+if (legacyDateSource === 'publish') {
+  settings.filterCaptureDate = false
+  settings.filterPublishDate = true
+} else if (legacyDateSource === 'capture') {
+  if (typeof settings.filterCaptureDate !== 'boolean') settings.filterCaptureDate = true
+  if (typeof settings.filterPublishDate !== 'boolean') settings.filterPublishDate = false
 }
+delete (settings as { dateSource?: string }).dateSource
+if (typeof settings.filterCaptureDate !== 'boolean') settings.filterCaptureDate = true
+if (typeof settings.filterPublishDate !== 'boolean') settings.filterPublishDate = false
 
 if (settings.autoUaTune !== false) {
   applyUaGeneratorProfile(settings)

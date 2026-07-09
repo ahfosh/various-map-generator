@@ -378,17 +378,9 @@
           <Checkbox v-model="settings.rejectRoadName">拒绝有路名的地点</Checkbox>
 
           <Checkbox v-model="settings.rejectDateless">拒绝无日期的地点</Checkbox>
-          <div class="flex flex-col gap-0.5">
-            <div
-              class="flex justify-between items-center gap-2"
-              title="筛选与「检查所有日期」所依据的时间字段"
-            >
-              <span>日期依据</span>
-              <select v-model="settings.dateSource" class="min-w-36">
-                <option value="capture">采集日期</option>
-                <option value="publish">发布日期</option>
-              </select>
-            </div>
+          <div class="flex flex-wrap gap-x-4 gap-y-1">
+            <Checkbox v-model="settings.filterCaptureDate">采集日期</Checkbox>
+            <Checkbox v-model="settings.filterPublishDate">发布日期</Checkbox>
           </div>
           <div v-if="!settings.selectMonths" class="flex flex-col gap-0.5">
             <div class="flex justify-between">
@@ -771,7 +763,7 @@ import {
 import {
   BAIDU_UPDATE_TYPES,
   buildPanoramaRecord,
-  getEffectivePanoramaDate,
+  getPanoramaDateField,
   normalizeImportedPanorama,
   normalizeUpdateType,
 } from '@/composables/baiduPanorama';
@@ -1219,13 +1211,14 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
         return false;
     }
 
-    // 发布日 (procdate) 不在 TimeLine 摘要里；相关路径只负责拉详情，筛选在 isPanoGood
-    const usePublishDate = settings.dateSource === 'publish';
+    const filterCapture = settings.filterCaptureDate;
+    const filterPublish = settings.filterPublishDate;
 
     if (settings.randomInTimeline && res.time?.length) {
       const randomIndex = Math.floor(Math.random() * res.time.length);
       const randomPano = res.time[randomIndex];
-      if (!usePublishDate) {
+      // 时间线仅含采集日；发布日在 isPanoGood 中校验
+      if (filterCapture) {
         const panoDate = findDateInObject(randomPano);
         const parsedDate = panoDate ? panoDate.getTime() : undefined;
         if (parsedDate) {
@@ -1239,38 +1232,47 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
 
     if (settings.checkAllDates && !settings.selectMonths) {
       if (!res.time?.length) {
-        // 无时间线时仍检查当前点
         getPano(res.location.pano, polygon);
         return true;
       }
-      if (usePublishDate) {
+      if (filterCapture) {
+        const { fromDate, toDate } = getCachedDates();
+        let dateWithin = false;
         for (const timelineLoc of res.time) {
-          getPano(timelineLoc.pano, polygon);
+          const date = findDateInObject(timelineLoc);
+          const iDate = parseDate(date);
+          if (iDate >= fromDate && iDate <= toDate) {
+            dateWithin = true;
+            getPano(timelineLoc.pano, polygon);
+          }
         }
+        if (!dateWithin) return false;
         return true;
       }
-      const { fromDate, toDate } = getCachedDates();
-      let dateWithin = false;
+      // 仅发布日（或未勾选采集）：时间线无 procdate，全部深入
       for (const timelineLoc of res.time) {
-        const date = findDateInObject(timelineLoc);
-        const iDate = parseDate(date);
-        if (iDate >= fromDate && iDate <= toDate) {
-          dateWithin = true;
-          getPano(timelineLoc.pano, polygon);
-        }
+        getPano(timelineLoc.pano, polygon);
       }
-      if (!dateWithin) return false;
       return true;
     }
 
     {
-      const effectiveDate = getEffectivePanoramaDate(res, settings.dateSource);
-      if (settings.rejectDateless && !effectiveDate) return false;
-      if (effectiveDate && !settings.selectMonths) {
+      const captureDate = getPanoramaDateField(res, 'capture');
+      const publishDate = getPanoramaDateField(res, 'publish');
+      if (settings.rejectDateless) {
+        if (filterCapture && !captureDate) return false;
+        if (filterPublish && !publishDate) return false;
+        if (!filterCapture && !filterPublish && !captureDate && !publishDate) return false;
+      }
+      if (!settings.selectMonths) {
         const { fromDate, toDate } = getCachedDates();
-        const date = Date.parse(effectiveDate);
-        if (!Number.isNaN(date) && (date < fromDate || date > toDate)) {
-          return false;
+        if (filterCapture && captureDate) {
+          const t = Date.parse(captureDate);
+          if (!Number.isNaN(t) && (t < fromDate || t > toDate)) return false;
+        }
+        if (filterPublish && publishDate) {
+          const t = Date.parse(publishDate);
+          if (!Number.isNaN(t) && (t < fromDate || t > toDate)) return false;
         }
       }
       getPano(res.location.pano, polygon);
@@ -1309,84 +1311,76 @@ async function isPanoGood(pano: StreetViewPanoramaData) {
     if (!isAcceptableCurve(links, settings.minCurveAngle)) return false;
   }
 
-  const effectiveDate = getEffectivePanoramaDate(pano, settings.dateSource);
-  if (settings.rejectDateless && !effectiveDate) return false;
+  const filterCapture = settings.filterCaptureDate;
+  const filterPublish = settings.filterPublishDate;
+  const captureDate = getPanoramaDateField(pano, 'capture');
+  const publishDate = getPanoramaDateField(pano, 'publish');
+
+  if (settings.rejectDateless) {
+    if (filterCapture && !captureDate) return false;
+    if (filterPublish && !publishDate) return false;
+    if (!filterCapture && !filterPublish && !captureDate && !publishDate) return false;
+  }
 
   const { fromDate, toDate } = getCachedDates();
-  const locDate = effectiveDate ? Date.parse(effectiveDate) : NaN;
   const fromMonth = settings.fromMonth;
   const toMonth = settings.toMonth;
   const fromYear = settings.fromYear;
   const toYear = settings.toYear;
-  const usePublishDate = settings.dateSource === 'publish';
 
-  // 主路径：用「日期依据」对应字段做区间判断
-  // checkAllDates + 采集日时，下方仍会核对时间线；发布日以当前全景 procdate 为准
-  if (!settings.selectMonths) {
-    if (!Number.isNaN(locDate) && (locDate < fromDate || locDate > toDate)) return false;
-  }
+  const monthInRange = (month: number | string, year: number | string) => {
+    const m = Number(month);
+    const y = Number(year);
+    const fm = Number(fromMonth);
+    const tm = Number(toMonth);
+    const fy = Number(fromYear);
+    const ty = Number(toYear);
+    if (y < fy || y > ty) return false;
+    if (fm <= tm) return m >= fm && m <= tm;
+    return m >= fm || m <= tm;
+  };
 
-  if (settings.onlyOneInTimeframe) {
-    // 发布日模式下时间线无 procdate，无法可靠判断「同位置是否另有发布日在区间内」
-    if (!usePublishDate) {
-      if (!pano.time?.length) return false;
-      for (const loc of pano.time) {
-        if (loc.pano == pano.location?.pano) continue;
-        const date = findDateInObject(loc);
-        const iDate = parseDate(date);
-        if (iDate >= fromDate && iDate <= toDate) return false;
-      }
+  const dateInConfiguredRange = (dateStr: string) => {
+    if (settings.selectMonths) {
+      return monthInRange(dateStr.slice(5, 7), dateStr.slice(0, 4));
+    }
+    const t = Date.parse(dateStr);
+    return !Number.isNaN(t) && t >= fromDate && t <= toDate;
+  };
+
+  if (filterCapture && captureDate && !dateInConfiguredRange(captureDate)) return false;
+  if (filterPublish && publishDate && !dateInConfiguredRange(publishDate)) return false;
+
+  if (settings.onlyOneInTimeframe && filterCapture) {
+    if (!pano.time?.length) return false;
+    for (const loc of pano.time) {
+      if (loc.pano == pano.location?.pano) continue;
+      const date = findDateInObject(loc);
+      const iDate = parseDate(date);
+      if (iDate >= fromDate && iDate <= toDate) return false;
     }
   }
 
-  if (settings.checkAllDates && !settings.selectMonths && !usePublishDate) {
+  if (settings.checkAllDates && filterCapture) {
     if (!pano.time?.length) return false;
-
     let dateWithin = false;
     for (let i = 0; i < pano.time.length; i++) {
       const timeframeDate = findDateInObject(pano.time[i]);
-      const iDate = parseDate(timeframeDate);
-
-      if (iDate >= fromDate && iDate <= toDate) {
-        dateWithin = true;
-        break;
-      }
-    }
-    if (!dateWithin) return false;
-  }
-
-  if (settings.selectMonths) {
-    const monthInRange = (month: number | string, year: number | string) => {
-      const m = Number(month);
-      const y = Number(year);
-      const fm = Number(fromMonth);
-      const tm = Number(toMonth);
-      const fy = Number(fromYear);
-      const ty = Number(toYear);
-      if (y < fy || y > ty) return false;
-      if (fm <= tm) return m >= fm && m <= tm;
-      return m >= fm || m <= tm;
-    };
-
-    if (settings.checkAllDates && !usePublishDate) {
-      if (!pano.time?.length) return false;
-      let dateWithin = false;
-      for (let i = 0; i < pano.time.length; i++) {
-        const timeframeDate = findDateInObject(pano.time[i]);
+      if (settings.selectMonths) {
         const { month: iDateMonth, year: iDateYear } = extractMonthYear(timeframeDate);
         if (monthInRange(iDateMonth, iDateYear)) {
           dateWithin = true;
           break;
         }
+      } else {
+        const iDate = parseDate(timeframeDate);
+        if (iDate >= fromDate && iDate <= toDate) {
+          dateWithin = true;
+          break;
+        }
       }
-      if (!dateWithin) return false;
-    } else if (effectiveDate) {
-      const year = effectiveDate.slice(0, 4);
-      const month = effectiveDate.slice(5, 7);
-      if (!monthInRange(month, year)) return false;
-    } else if (settings.rejectDateless) {
-      return false;
     }
+    if (!dateWithin) return false;
   }
 
   return true;
@@ -1424,12 +1418,8 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
     const isPanoGoodAndInCountry = (await isPanoGood(pano)) && inCountry;
 
     if (settings.checkAllDates && !settings.selectMonths && pano.time) {
-      // 发布日：TimeLine 无 procdate，全部深入；采集日：按时间线日期预筛
-      if (settings.dateSource === 'publish') {
-        for (const loc of pano.time) {
-          getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
-        }
-      } else {
+      // 勾选采集日：按时间线采集日预筛；仅发布日时时间线无 procdate，全部深入
+      if (settings.filterCaptureDate) {
         const { fromDate, toDate } = getCachedDates();
         for (const loc of pano.time) {
           const date = findDateInObject(loc);
@@ -1437,6 +1427,10 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
           if (iDate >= fromDate && iDate <= toDate) {
             getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
           }
+        }
+      } else {
+        for (const loc of pano.time) {
+          getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
         }
       }
     }
@@ -1659,11 +1653,7 @@ function getPanoForImportDeep(id: string, depth: number) {
     const isPanoGoodAndInChina = (await isPanoGood(pano)) && isInChina(lng, lat);
 
     if (settings.checkAllDates && !settings.selectMonths && pano.time) {
-      if (settings.dateSource === 'publish') {
-        for (const loc of pano.time) {
-          getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
-        }
-      } else {
+      if (settings.filterCaptureDate) {
         const { fromDate, toDate } = getCachedDates();
         for (const loc of pano.time) {
           const date = findDateInObject(loc);
@@ -1671,6 +1661,10 @@ function getPanoForImportDeep(id: string, depth: number) {
           if (iDate >= fromDate && iDate <= toDate) {
             getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
           }
+        }
+      } else {
+        for (const loc of pano.time) {
+          getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
         }
       }
     }
