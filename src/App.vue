@@ -30,18 +30,11 @@
           </div>
           <div class="flex items-center justify-between ml-1 mr-1">
             地图主题：
-            <select
-              v-model="settings.mapTheme"
-              class="w-22 ml-2 text-xs"
-              @change="toggleMapTheme(settings.mapTheme)"
-            >
-              <option value="default">默认</option>
-              <option value="classic">经典</option>
-              <option value="retro">复古</option>
-              <option value="dark">深色</option>
-              <option value="night">夜间</option>
-              <option value="aubergine">茄紫</option>
-            </select>
+            <Segment
+              :model-value="settings.mapTheme"
+              :options="mapThemeOptions"
+              @update:model-value="onMapThemeChange"
+            />
           </div>
           <div class="flex items-center justify-between ml-1 mr-1">
             覆盖层透明度：
@@ -751,6 +744,7 @@ import Slider from '@vueform/slider';
 import Collapsible from '@/components/Elements/Collapsible.vue';
 import Button from '@/components/Elements/Button.vue';
 import Checkbox from '@/components/Elements/Checkbox.vue';
+import Segment from '@/components/Elements/Segment.vue';
 import Spinner from '@/components/Elements/Spinner.vue';
 import Tooltip from '@/components/Elements/Tooltip.vue';
 import Clipboard from '@/components/Clipboard.vue';
@@ -842,6 +836,16 @@ const panels = useStorage('map_generator__panels_v2', {
   mapMakingSettings: false,
   marker: false,
 });
+
+const mapThemeOptions = [
+  { value: 'classic', label: '经典' },
+  { value: 'dark', label: '深色' },
+] as const;
+
+function onMapThemeChange(theme: 'classic' | 'dark') {
+  settings.mapTheme = theme;
+  toggleMapTheme(theme);
+}
 
 const { selected, importedLocations, select, state } = useStore();
 const importCheckedPanos = new Set<string>();

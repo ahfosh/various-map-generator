@@ -7,7 +7,8 @@ import type { UaProfileTier } from '@/composables/uaProfile'
 const { currentYear, currentDate } = getCurrentDate()
 
 const defaultSettings = {
-  mapTheme: 'default',
+  /** 底图：classic（浅色瓦片）| dark（深色瓦片） */
+  mapTheme: 'classic' as 'classic' | 'dark',
 
   coverage: {
     opacity: 1,
@@ -118,6 +119,12 @@ CURRENT_KEYS.forEach((key: string) => {
 const storedSettings = useStorage(CURRENT_KEY, defaultSettings)
 const settings = reactive(storedSettings.value)
 settings.toYear = currentYear
+
+// 地图主题：仅 classic / dark（旧选项映射）
+{
+  const theme = settings.mapTheme as string
+  settings.mapTheme = theme === 'dark' || theme === 'night' ? 'dark' : 'classic'
+}
 
 // 从旧版 dateSource 迁移
 const legacyDateSource = (settings as { dateSource?: string }).dateSource

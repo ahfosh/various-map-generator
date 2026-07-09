@@ -33,7 +33,7 @@ let map: L.Map
 const currentZoom = ref(1)
 
 const petalMapsLayer = L.tileLayer(
-  !['dark', 'night'].includes(settings.mapTheme) ? PETAL_MAPS_TEMPLATE.Light : PETAL_MAPS_TEMPLATE.Dark,
+  settings.mapTheme === 'dark' ? PETAL_MAPS_TEMPLATE.Dark : PETAL_MAPS_TEMPLATE.Light,
 )
 
 const baiduCoverageLayer = new BaiduLayer({ filter: 'hue-rotate(140deg) saturate(200%)' })
@@ -604,11 +604,7 @@ async function toggleLayer(layer: LayerMeta) {
 
 function toggleMapTheme(theme: string) {
   if (!map) return
-  if (theme === 'dark' || theme === 'night') {
-    petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE.Dark)
-  } else {
-    petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE.Light)
-  }
+  petalMapsLayer.setUrl(theme === 'dark' ? PETAL_MAPS_TEMPLATE.Dark : PETAL_MAPS_TEMPLATE.Light)
 }
 
 function setCoverageLayerOpacity(opacity: number) {
