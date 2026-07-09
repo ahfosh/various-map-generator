@@ -25,6 +25,12 @@ const defaultSettings = {
   regionRadius: 100,
 
   rejectDateless: true,
+  /**
+   * 日期筛选依据：
+   * - capture：采集日（panoId / sdata.Date）
+   * - publish：发布日（sdata.procdate，街景上线时间）
+   */
+  dateSource: 'capture' as 'capture' | 'publish',
   rejectNoDescription: true,
   rejectRoadName: false,
   searchInDescription: {
@@ -98,7 +104,7 @@ const defaultSettings = {
 }
 
 const CURRENT_KEYS = Object.keys(localStorage)
-const CURRENT_KEY = 'map_generator__settings_v12'
+const CURRENT_KEY = 'map_generator__settings_v13'
 
 CURRENT_KEYS.forEach((key: string) => {
   if (
@@ -113,6 +119,9 @@ const storedSettings = useStorage(CURRENT_KEY, defaultSettings)
 const settings = reactive(storedSettings.value)
 settings.toDate = currentDate
 settings.toYear = currentYear
+if (settings.dateSource !== 'capture' && settings.dateSource !== 'publish') {
+  settings.dateSource = 'capture'
+}
 
 if (settings.autoUaTune !== false) {
   applyUaGeneratorProfile(settings)

@@ -25,9 +25,69 @@ export interface BaiduSdataResult {
   Rname?: string
   Heading?: number
   Pitch?: number
+  /** 采集日期，YYYYMMDD，如 "20240516" */
+  Date?: string
+  /** 采集月份，YYYYMM */
+  Time?: string
+  /**
+   * 处理/上线日期（街景发布时间），YYYYMMDD，如 "20260618"。
+   * 与 Date（拍摄日）不同：同一采集可在之后才入库发布。
+   */
+  procdate?: string
   Links?: BaiduLink[]
   Roads?: BaiduRoad[]
-  TimeLine?: Array<{ ID: string }>
+  TimeLine?: Array<{
+    ID: string
+    IsCurrent?: number
+    Time?: string
+    TimeLine?: string
+    Year?: string
+  }>
+}
+
+/** 将百度紧凑日期转为 YYYY-MM-DD（支持 YYYYMMDD / YYYYMM / 已有 ISO 前缀） */
+export function parseBaiduCompactDate(value?: string | null): string | undefined {
+  if (value == null) return undefined
+  const s = String(value).trim()
+  if (!s) return undefined
+  if (/^\d{8}$/.test(s)) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`
+  }
+  if (/^\d{6}$/.test(s)) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-01`
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    return s.slice(0, 10)
+  }
+  if (/^\d{4}-\d{2}/.test(s)) {
+    return `${s.slice(0, 7)}-01`
+  }
+  return undefined
+}
+
+/** 将 YYYY-MM-DD 规范为可 Date.parse 的本地日开始时间串 */
+export function toFilterDateTime(ymdOrIso?: string | null): string | undefined {
+  if (!ymdOrIso) return undefined
+  const s = String(ymdOrIso).trim()
+  if (!s) return undefined
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s
+  const ymd = parseBaiduCompactDate(s) ?? ( /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined )
+  return ymd ? `${ymd}T00:00:00` : s
+}
+
+/**
+ * 生成/筛选用的有效日期。
+ * - capture：采集日（imageDate / API Date / panoId）
+ * - publish：发布日（procdate）
+ */
+export function getEffectivePanoramaDate(
+  pano: { imageDate?: string; procDate?: string },
+  dateSource: 'capture' | 'publish' = 'capture',
+): string | undefined {
+  if (dateSource === 'publish') {
+    return toFilterDateTime(pano.procDate) ?? undefined
+  }
+  return toFilterDateTime(pano.imageDate) ?? undefined
 }
 
 export interface PanoramaViewSettings {
@@ -174,6 +234,7 @@ export function buildPanoramaRecord(
     locality: pano.location.locality ?? undefined,
     road: pano.location.road ?? undefined,
     imageDate: pano.imageDate,
+    procDate: pano.procDate,
     source: 'baidu_pano',
     links: [
       ...new Set(

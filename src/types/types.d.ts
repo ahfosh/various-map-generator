@@ -38,7 +38,10 @@ interface Panorama {
   locality?: string
   road?: string
   altitude?: number
+  /** 采集日期 */
   imageDate?: string
+  /** 发布日期（百度 sdata.procdate） */
+  procDate?: string
   source?: string
   update_type?: string
   link?: string

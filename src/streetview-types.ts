@@ -60,7 +60,13 @@ export interface StreetViewPanoramaData {
     worldSize: Size
     getTileUrl: () => string
   }
+  /** 采集日期（来自 panoId / API Date） */
   imageDate?: string
+  /**
+   * 发布/处理日期（API procdate，YYYY-MM-DD 或带时间的 ISO）。
+   * 用于按「上线时间」筛选生成。
+   */
+  procDate?: string
   copyright?: string
   time?: Array<{ pano: string; date: Date; [key: string]: unknown }>
 }

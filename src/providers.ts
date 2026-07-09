@@ -1,7 +1,9 @@
 import { extractDateFromPanoId } from '@/composables/utils';
 import {
   getBaiduRoadName,
+  parseBaiduCompactDate,
   parseBaiduLinks,
+  toFilterDateTime,
   type BaiduSdataResult,
 } from '@/composables/baiduPanorama';
 import { cacheManager, coordinateCache, getCoordinateCacheKey } from '@/cache';
@@ -14,6 +16,24 @@ import {
   type StreetViewLocationRequest,
   type StreetViewPanoramaData,
 } from '@/streetview-types';
+
+/** 从 sdata 解析采集日与发布日（procdate） */
+function resolveBaiduDates(panoId: string, result: BaiduSdataResult) {
+  const fromPanoId =
+    panoId.length >= 22 ? extractDateFromPanoId(panoId.slice(10, 22)) : undefined;
+  const captureYmd = parseBaiduCompactDate(result.Date);
+  // 优先 API Date 的年月日；若与 panoId 同日则保留 panoId 中的时分秒
+  let imageDate = fromPanoId;
+  if (captureYmd) {
+    if (fromPanoId && fromPanoId.startsWith(captureYmd)) {
+      imageDate = fromPanoId;
+    } else {
+      imageDate = `${captureYmd}T00:00:00`;
+    }
+  }
+  const procDate = toFilterDateTime(parseBaiduCompactDate(result.procdate));
+  return { imageDate, procDate };
+}
 
 async function fetchPanoIdFromCoords(
   lng: number,
@@ -56,12 +76,29 @@ async function buildPanoramaFromId(panoId: string): Promise<StreetViewPanoramaDa
   }
 
   const roadName = getBaiduRoadName(result);
-  const date = extractDateFromPanoId(panoId.slice(10, 22));
+  const { imageDate, procDate } = resolveBaiduDates(panoId, result);
   const [lng, lat] = gcoord.transform(
     [result.X / 100, result.Y / 100],
     gcoord.BD09MC,
     gcoord.GCJ02,
   );
+
+  // TimeLine 条目通常只有 ID；日期用 panoId / TimeLine 字段近似（采集侧）
+  const timelineEntries = (result.TimeLine ?? []).map((r) => {
+    const id = r.ID;
+    let dateStr: string | undefined;
+    if (id?.length >= 22) {
+      dateStr = extractDateFromPanoId(id.slice(10, 22));
+    }
+    if (!dateStr && r.TimeLine) {
+      dateStr = toFilterDateTime(parseBaiduCompactDate(r.TimeLine));
+    }
+    return {
+      pano: id,
+      date: new Date(dateStr || 0),
+    };
+  });
+
   const panorama: StreetViewPanoramaData = {
     location: {
       pano: panoId,
@@ -79,18 +116,18 @@ async function buildPanoramaFromId(panoId: string): Promise<StreetViewPanoramaDa
       worldSize: new Size(8192, 4096),
       getTileUrl: () => '',
     },
-    imageDate: date,
+    imageDate,
+    procDate,
     copyright: '© 百度街景',
     time: [
-      ...(result.TimeLine?.map((r: { ID: string }) => ({
-        pano: r.ID,
-        date: new Date(extractDateFromPanoId(r.ID.slice(10, 22))),
-      })) ?? []),
+      ...timelineEntries,
       {
         pano: panoId,
-        date: new Date(date),
+        date: new Date(imageDate || 0),
       },
-    ].sort((a, b) => a.date.getTime() - b.date.getTime()),
+    ]
+      .filter((t) => t.pano && !Number.isNaN(t.date.getTime()))
+      .sort((a, b) => a.date.getTime() - b.date.getTime()),
   };
   cacheManager.set('baidu', panoId, panorama);
   return panorama;
