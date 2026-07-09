@@ -10,7 +10,8 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "deploy:netlify": "node scripts/deploy-netlify.mjs"
   },
   "dependencies": {
     "@turf/boolean-point-in-polygon": "^7.3.5",
@@ -30,6 +31,7 @@
     "@types/leaflet": "^1.9.21",
     "@types/leaflet-contextmenu": "^1.4.4",
     "@types/leaflet-draw": "^1.0.13",
+    "@types/leaflet.markercluster": "^1.5.6",
     "@types/node": "^26.0.1",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/eslint-config-prettier": "^10.2.0",

@@ -1,0 +1,20 @@
+# 本站通过 CLI 直传 dist/，不走 Git 触发的 Netlify Build。
+# publish 供 CLI / 后台识别发布目录；构建在本机 npm run build 完成。
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# SPA：客户端路由回退
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
