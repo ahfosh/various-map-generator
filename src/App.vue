@@ -840,9 +840,9 @@ const panels = useStorage('map_generator__panels_v2', {
 const mapThemeOptions = [
   { value: 'classic', label: '经典' },
   { value: 'dark', label: '深色' },
-] as const;
+];
 
-function onMapThemeChange(theme: 'classic' | 'dark') {
+function onMapThemeChange(theme) {
   settings.mapTheme = theme;
   toggleMapTheme(theme);
 }

@@ -25,6 +25,7 @@ import {
 } from '@/composables/utils.ts'
 import { BaiduLayer } from './layers/baiduLayer'
 import { CHINA_BBOX, CHINA_CENTER, PETAL_MAPS_TEMPLATE } from './constants'
+import type { MapTheme } from './settings'
 
 import { useStore } from '@/store'
 const { selected, select, state } = useStore()
@@ -32,9 +33,7 @@ const { selected, select, state } = useStore()
 let map: L.Map
 const currentZoom = ref(1)
 
-const petalMapsLayer = L.tileLayer(
-  settings.mapTheme === 'dark' ? PETAL_MAPS_TEMPLATE.Dark : PETAL_MAPS_TEMPLATE.Light,
-)
+const petalMapsLayer = L.tileLayer(PETAL_MAPS_TEMPLATE[settings.mapTheme])
 
 const baiduCoverageLayer = new BaiduLayer({ filter: 'hue-rotate(140deg) saturate(200%)' })
 
@@ -602,9 +601,9 @@ async function toggleLayer(layer: LayerMeta) {
   }
 }
 
-function toggleMapTheme(theme: string) {
+function toggleMapTheme(theme: MapTheme) {
   if (!map) return
-  petalMapsLayer.setUrl(theme === 'dark' ? PETAL_MAPS_TEMPLATE.Dark : PETAL_MAPS_TEMPLATE.Light)
+  petalMapsLayer.setUrl(PETAL_MAPS_TEMPLATE[theme])
 }
 
 function setCoverageLayerOpacity(opacity: number) {
