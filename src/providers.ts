@@ -50,7 +50,8 @@ async function fetchPanoIdFromCoords(
     return cached.panoId;
   }
 
-  const [bd09mcLng, bd09mcLat] = gcoord.transform([lng, lat], gcoord.WGS84, gcoord.BD09MC);
+  // Map / polygons use GCJ-02 (Petal Maps + Baidu pano markers); Baidu API needs BD-09MC
+  const [bd09mcLng, bd09mcLat] = gcoord.transform([lng, lat], gcoord.GCJ02, gcoord.BD09MC);
   const uri = `https://mapsv0.bdimg.com/?qt=qsdata&x=${bd09mcLng}&y=${bd09mcLat}&r=${radius}`;
   const resp = await fetch(uri);
   const json = await resp.json();
