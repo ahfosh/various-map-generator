@@ -88,7 +88,8 @@ class CoordinateLookupCache {
 class CacheManager {
   private caches = new Map<string, LRUCache<string, any>>();
   private lastUsedProvider: string | null = null;
-  private readonly panoCacheSize = 500
+  /** Larger capacity: checkAllDates fans out many timeline sdata hits per seed point. */
+  private readonly panoCacheSize = 2000
 
   getCache(provider: string): LRUCache<string, any> {
     if (!this.caches.has(provider)) {
@@ -119,7 +120,7 @@ class CacheManager {
     for (const cache of this.caches.values()) {
       total += cache.size;
     }
-    if (total > 5000 && this.lastUsedProvider) {
+    if (total > 8000 && this.lastUsedProvider) {
       for (const [provider, cache] of this.caches.entries()) {
         if (provider !== this.lastUsedProvider) {
           cache.clear();
@@ -129,5 +130,100 @@ class CacheManager {
   }
 }
 
+export type PanoDateMeta = {
+  /** Capture / image date (ISO-ish) */
+  imageDate?: string
+  /** Publish / procdate (ISO-ish) */
+  procDate?: string
+  /** Epoch ms when written */
+  ts: number
+}
+
+const PANO_DATE_META_KEY = 'map_generator__pano_date_meta_v1'
+const PANO_DATE_META_MAX = 8000
+/** procdate can be rewritten by Baidu reprocessing; avoid permanent false rejects */
+const PANO_DATE_META_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * Persistent panoId → capture/publish dates for cross-session timeline pruning.
+ * Used only to *reject* (skip network); never to accept without a full fetch.
+ */
+class PanoDateMetaCache {
+  private map = new Map<string, PanoDateMeta>()
+  private loaded = false
+  private persistTimer: ReturnType<typeof setTimeout> | null = null
+
+  private ensureLoaded() {
+    if (this.loaded) return
+    this.loaded = true
+    if (typeof localStorage === 'undefined') return
+    try {
+      const raw = localStorage.getItem(PANO_DATE_META_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Record<string, PanoDateMeta>
+      const now = Date.now()
+      for (const [id, meta] of Object.entries(parsed)) {
+        if (!meta || typeof meta !== 'object') continue
+        if (typeof meta.ts !== 'number' || now - meta.ts > PANO_DATE_META_TTL_MS) continue
+        this.map.set(id, meta)
+      }
+    } catch {
+      // ignore corrupt storage
+    }
+  }
+
+  get(panoId: string): PanoDateMeta | undefined {
+    this.ensureLoaded()
+    const meta = this.map.get(panoId)
+    if (!meta) return undefined
+    if (Date.now() - meta.ts > PANO_DATE_META_TTL_MS) {
+      this.map.delete(panoId)
+      this.schedulePersist()
+      return undefined
+    }
+    // LRU touch
+    this.map.delete(panoId)
+    this.map.set(panoId, meta)
+    return meta
+  }
+
+  set(panoId: string, imageDate?: string, procDate?: string) {
+    if (!panoId) return
+    if (!imageDate && !procDate) return
+    this.ensureLoaded()
+    if (this.map.has(panoId)) this.map.delete(panoId)
+    this.map.set(panoId, { imageDate, procDate, ts: Date.now() })
+    while (this.map.size > PANO_DATE_META_MAX) {
+      const first = this.map.keys().next().value
+      if (first === undefined) break
+      this.map.delete(first)
+    }
+    this.schedulePersist()
+  }
+
+  private schedulePersist() {
+    if (typeof localStorage === 'undefined') return
+    if (this.persistTimer != null) return
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null
+      this.persist()
+    }, 400)
+  }
+
+  private persist() {
+    if (typeof localStorage === 'undefined') return
+    try {
+      const obj: Record<string, PanoDateMeta> = {}
+      for (const [id, meta] of this.map) {
+        obj[id] = meta
+      }
+      localStorage.setItem(PANO_DATE_META_KEY, JSON.stringify(obj))
+    } catch {
+      // quota / private mode
+    }
+  }
+}
+
 export const cacheManager = new CacheManager();
 export const coordinateCache = new CoordinateLookupCache();
+export const panoDateMetaCache = new PanoDateMetaCache();

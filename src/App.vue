@@ -818,6 +818,7 @@ import {
 } from '@/composables/utils.ts';
 import StreetViewProviders from '@/providers';
 import { generationConcurrency } from '@/concurrency';
+import { panoDateMetaCache } from '@/cache';
 import { getFlagCountryCode, isChinaCountryCode, isInChina } from '@/constants';
 import {
   StreetViewStatus,
@@ -901,6 +902,82 @@ function getCachedPublishDates() {
     c.lastPublishTo = settings.publishToDate;
   }
   return { fromDate: c.publishFrom, toDate: c.publishTo };
+}
+
+function polygonStillNeedsLocations(polygon: Polygon) {
+  return state.started && polygon.found.length < polygon.nbNeeded;
+}
+
+/**
+ * Whether to deep-fetch a timeline entry. TimeLine has capture month only, not procdate.
+ * Safe prunes:
+ * - capture filter range
+ * - capture > publishTo (procdate >= capture always)
+ * - cached procDate outside publish range (TTL-backed meta)
+ */
+function shouldDeepFetchTimelinePano(timelineLoc: { pano?: string; date?: Date }) {
+  const panoId = timelineLoc.pano;
+  if (!panoId) return false;
+
+  const filterCapture = settings.filterCaptureDate;
+  const filterPublish = settings.filterPublishDate;
+  const captureDate = findDateInObject(timelineLoc);
+  const captureTs = captureDate ? parseDate(captureDate) : NaN;
+
+  if (filterCapture && !settings.selectMonths && !Number.isNaN(captureTs)) {
+    const { fromDate, toDate } = getCachedCaptureDates();
+    if (captureTs < fromDate || captureTs > toDate) return false;
+  }
+
+  if (filterPublish && !settings.selectMonths) {
+    const { fromDate: publishFrom, toDate: publishTo } = getCachedPublishDates();
+    // Impossible: published before capture month
+    if (!Number.isNaN(captureTs) && captureTs > publishTo) return false;
+
+    const meta = panoDateMetaCache.get(panoId);
+    if (meta?.procDate) {
+      const t = Date.parse(meta.procDate);
+      if (!Number.isNaN(t) && (t < publishFrom || t > publishTo)) return false;
+    }
+    if (meta?.imageDate && !Number.isNaN(Date.parse(meta.imageDate))) {
+      const cap = Date.parse(meta.imageDate);
+      // Same invariant with higher-resolution cached capture day
+      if (cap > publishTo) return false;
+    }
+  }
+
+  return true;
+}
+
+/** Skip network when persisted dates already prove date filters fail. */
+function isRejectedByCachedDates(panoId: string): boolean {
+  const filterCapture = settings.filterCaptureDate;
+  const filterPublish = settings.filterPublishDate;
+  if (!filterCapture && !filterPublish) return false;
+  if (settings.selectMonths) return false;
+
+  const meta = panoDateMetaCache.get(panoId);
+  if (!meta) return false;
+
+  if (filterCapture && meta.imageDate) {
+    const t = Date.parse(meta.imageDate);
+    const { fromDate, toDate } = getCachedCaptureDates();
+    if (!Number.isNaN(t) && (t < fromDate || t > toDate)) return true;
+  }
+
+  if (filterPublish && meta.procDate) {
+    const t = Date.parse(meta.procDate);
+    const { fromDate, toDate } = getCachedPublishDates();
+    if (!Number.isNaN(t) && (t < fromDate || t > toDate)) return true;
+  }
+
+  if (filterPublish && meta.imageDate && !meta.procDate) {
+    const cap = Date.parse(meta.imageDate);
+    const { toDate: publishTo } = getCachedPublishDates();
+    if (!Number.isNaN(cap) && cap > publishTo) return true;
+  }
+
+  return false;
 }
 
 const canBeStarted = computed(() =>
@@ -1227,10 +1304,12 @@ function getPanoramaRequest(loc: LatLng): StreetViewLocationRequest {
 }
 
 async function getLoc(loc: LatLng, polygon: Polygon) {
+  if (!polygonStillNeedsLocations(polygon)) return false;
   if (!isInChina(loc.lng, loc.lat)) return false;
   if (isSampleExcluded(loc, polygon)) return false;
 
   return StreetViewProviders.getPanorama(getPanoramaRequest(loc), async (res, status) => {
+    if (!polygonStillNeedsLocations(polygon)) return false;
     if (status === StreetViewStatus.UNKNOWN_ERROR) {
       generationConcurrency.recordError();
       return false;
@@ -1274,17 +1353,9 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
     const filterPublish = settings.filterPublishDate;
 
     if (settings.randomInTimeline && res.time?.length) {
-      const randomIndex = Math.floor(Math.random() * res.time.length);
-      const randomPano = res.time[randomIndex];
-      // 时间线仅含采集日；发布日在 isPanoGood 中校验
-      if (filterCapture) {
-        const panoDate = findDateInObject(randomPano);
-        const parsedDate = panoDate ? panoDate.getTime() : undefined;
-        if (parsedDate) {
-          const { fromDate, toDate } = getCachedCaptureDates();
-          if (parsedDate < fromDate || parsedDate > toDate) return false;
-        }
-      }
+      const candidates = res.time.filter((t) => shouldDeepFetchTimelinePano(t));
+      if (!candidates.length) return false;
+      const randomPano = candidates[Math.floor(Math.random() * candidates.length)];
       getPano(randomPano.pano, polygon);
       return true;
     }
@@ -1294,25 +1365,15 @@ async function getLoc(loc: LatLng, polygon: Polygon) {
         getPano(res.location.pano, polygon);
         return true;
       }
-      if (filterCapture) {
-        const { fromDate, toDate } = getCachedCaptureDates();
-        let dateWithin = false;
-        for (const timelineLoc of res.time) {
-          const date = findDateInObject(timelineLoc);
-          const iDate = parseDate(date);
-          if (iDate >= fromDate && iDate <= toDate) {
-            dateWithin = true;
-            getPano(timelineLoc.pano, polygon);
-          }
-        }
-        if (!dateWithin) return false;
-        return true;
-      }
-      // 仅发布日（或未勾选采集）：时间线无 procdate，全部深入
+      let fetched = 0;
       for (const timelineLoc of res.time) {
+        if (!shouldDeepFetchTimelinePano(timelineLoc)) continue;
+        fetched++;
         getPano(timelineLoc.pano, polygon);
       }
-      return true;
+      // 勾选采集日时：时间线预筛后无候选则放弃
+      if (filterCapture && fetched === 0) return false;
+      return fetched > 0;
     }
 
     {
@@ -1452,12 +1513,17 @@ function getPano(id: string, polygon: Polygon) {
 }
 
 function getPanoDeep(id: string, polygon: Polygon, depth: number) {
-  if (!state.started) return;
+  if (!polygonStillNeedsLocations(polygon)) return;
   if (depth > settings.linksDepth) return;
   if (polygon.checkedPanos.has(id)) return;
-  else polygon.checkedPanos.add(id);
+  if (isRejectedByCachedDates(id)) {
+    polygon.checkedPanos.add(id);
+    return;
+  }
+  polygon.checkedPanos.add(id);
 
   StreetViewProviders.getPanorama({ pano: id }, async (pano, status) => {
+    if (!polygonStillNeedsLocations(polygon)) return;
     if (status == StreetViewStatus.UNKNOWN_ERROR) {
       polygon.checkedPanos.delete(id);
       generationConcurrency.recordError();
@@ -1477,22 +1543,12 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
       polygon.feature,
     );
     const isPanoGoodAndInCountry = (await isPanoGood(pano)) && inCountry;
+    if (!polygonStillNeedsLocations(polygon)) return;
 
     if (settings.checkAllDates && !settings.selectMonths && pano.time) {
-      // 勾选采集日：按时间线采集日预筛；仅发布日时时间线无 procdate，全部深入
-      if (settings.filterCaptureDate) {
-        const { fromDate, toDate } = getCachedCaptureDates();
-        for (const loc of pano.time) {
-          const date = findDateInObject(loc);
-          const iDate = parseDate(date);
-          if (iDate >= fromDate && iDate <= toDate) {
-            getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
-          }
-        }
-      } else {
-        for (const loc of pano.time) {
-          getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
-        }
+      for (const loc of pano.time) {
+        if (!shouldDeepFetchTimelinePano(loc)) continue;
+        getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
       }
     }
     if (settings.checkLinks) {
@@ -1503,6 +1559,7 @@ function getPanoDeep(id: string, polygon: Polygon, depth: number) {
       }
       if (pano.time) {
         for (const loc of pano.time) {
+          if (!shouldDeepFetchTimelinePano(loc)) continue;
           getPanoDeep(loc.pano, polygon, isPanoGoodAndInCountry ? 1 : depth + 1);
         }
       }
@@ -1691,6 +1748,10 @@ function getPanoForImport(id: string) {
 function getPanoForImportDeep(id: string, depth: number) {
   if (depth > settings.linksDepth) return;
   if (importCheckedPanos.has(id)) return;
+  if (isRejectedByCachedDates(id)) {
+    importCheckedPanos.add(id);
+    return;
+  }
   importCheckedPanos.add(id);
 
   StreetViewProviders.getPanorama({ pano: id }, async (pano, status) => {
@@ -1714,19 +1775,9 @@ function getPanoForImportDeep(id: string, depth: number) {
     const isPanoGoodAndInChina = (await isPanoGood(pano)) && isInChina(lng, lat);
 
     if (settings.checkAllDates && !settings.selectMonths && pano.time) {
-      if (settings.filterCaptureDate) {
-        const { fromDate, toDate } = getCachedCaptureDates();
-        for (const loc of pano.time) {
-          const date = findDateInObject(loc);
-          const iDate = parseDate(date);
-          if (iDate >= fromDate && iDate <= toDate) {
-            getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
-          }
-        }
-      } else {
-        for (const loc of pano.time) {
-          getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
-        }
+      for (const loc of pano.time) {
+        if (!shouldDeepFetchTimelinePano(loc)) continue;
+        getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
       }
     }
     if (settings.checkLinks) {
@@ -1737,6 +1788,7 @@ function getPanoForImportDeep(id: string, depth: number) {
       }
       if (pano.time) {
         for (const loc of pano.time) {
+          if (!shouldDeepFetchTimelinePano(loc)) continue;
           getPanoForImportDeep(loc.pano, isPanoGoodAndInChina ? 1 : depth + 1);
         }
       }

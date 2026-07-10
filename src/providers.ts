@@ -6,7 +6,7 @@ import {
   toFilterDateTime,
   type BaiduSdataResult,
 } from '@/composables/baiduPanorama';
-import { cacheManager, coordinateCache, getCoordinateCacheKey } from '@/cache';
+import { cacheManager, coordinateCache, getCoordinateCacheKey, panoDateMetaCache } from '@/cache';
 import { panoRequestQueue } from '@/concurrency';
 import gcoord from 'gcoord';
 import {
@@ -78,6 +78,7 @@ async function buildPanoramaFromId(panoId: string): Promise<StreetViewPanoramaDa
 
   const roadName = getBaiduRoadName(result);
   const { imageDate, procDate } = resolveBaiduDates(panoId, result);
+  panoDateMetaCache.set(panoId, imageDate, procDate);
   const [lng, lat] = gcoord.transform(
     [result.X / 100, result.Y / 100],
     gcoord.BD09MC,
